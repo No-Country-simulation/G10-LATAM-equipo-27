@@ -1,0 +1,316 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "afe508f1-082d-4dd0-b61f-834c9a6a0bb9",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "// relaciono el ID que entrega Discord con el nombre del canal\nconst canales = {\n  \"1550016804418621452\": \"#general\",\n  \"1551309664397033513\": \"#preguntas\",\n  \"1551309281041715230\": \"#chat-egresados\",\n  \"1551309330198953994\": \"#oportunidades-laborales\"\n};\n\n// dejo fuera los mensajes sin texto, como el aviso que Discord publica cuando el bot se une\nconst mensajes = $input.all()\n  .map(item => item.json)\n  .filter(m => m.content && m.content.trim() !== \"\");\n\n// si no quedó ningún mensaje, termino sin mandar nada al endpoint\nif (mensajes.length === 0) {\n  return [];\n}\n\n// la semana se calcula con la fecha del mensaje más reciente\nconst fechaReciente = new Date(Math.max(...mensajes.map(m => new Date(m.timestamp))));\n\nfunction semanaISO(fecha) {\n  const d = new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate()));\n  const dia = d.getUTCDay() || 7;\n  d.setUTCDate(d.getUTCDate() + 4 - dia);\n  const inicioAnio = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));\n  return Math.ceil(((d - inicioAnio) / 86400000 + 1) / 7);\n}\n\nconst semana = String(semanaISO(fechaReciente)).padStart(2, \"0\");\n\nreturn [{\n  json: {\n    origen_comunidad: \"Discord_Grupo_ONE_G10\",\n    periodo_referencia: `Semana_${semana}`,\n    interacciones: mensajes.map(m => ({\n      autor: m.author.username,\n      canal: canales[m.channel_id] || `#${m.channel_id}`,\n      texto: m.content\n    }))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "1e602637-d748-432b-9778-f35b9aa56187",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://desktops-scanner-highway-supply.trycloudflare.com/procesar-actividad",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        864,
+        0
+      ],
+      "id": "eba2d850-5e2f-4308-8c29-fb96c5f194af",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "guildId": {
+          "__rl": true,
+          "value": "1550016802891898890",
+          "mode": "list",
+          "cachedResultName": "Servidor de Eduardo",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1551309664397033513",
+          "mode": "list",
+          "cachedResultName": "preguntas",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890/1551309664397033513"
+        },
+        "limit": 20,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -304
+      ],
+      "id": "63bd0bdf-2690-437d-b528-7be726051ce0",
+      "name": "Preguntas",
+      "webhookId": "4f2ed289-b9ed-406d-874e-8be3f1246ba2",
+      "credentials": {
+        "discordBotApi": {
+          "id": "V7JTx5aK74eUuRIF",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "guildId": {
+          "__rl": true,
+          "value": "1550016802891898890",
+          "mode": "list",
+          "cachedResultName": "Servidor de Eduardo",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1550016804418621452",
+          "mode": "list",
+          "cachedResultName": "general",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890/1550016804418621452"
+        },
+        "limit": 20,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -112
+      ],
+      "id": "edb2b718-898c-409b-875f-e97187c4307c",
+      "name": "general",
+      "webhookId": "4f2ed289-b9ed-406d-874e-8be3f1246ba2",
+      "credentials": {
+        "discordBotApi": {
+          "id": "V7JTx5aK74eUuRIF",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "guildId": {
+          "__rl": true,
+          "value": "1550016802891898890",
+          "mode": "list",
+          "cachedResultName": "Servidor de Eduardo",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1551309281041715230",
+          "mode": "list",
+          "cachedResultName": "chat-egresados",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890/1551309281041715230"
+        },
+        "limit": 20,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        240,
+        80
+      ],
+      "id": "b0b46a13-966b-43a7-a049-1e5a9ac9ee61",
+      "name": "Chat-egresados",
+      "webhookId": "4f2ed289-b9ed-406d-874e-8be3f1246ba2",
+      "credentials": {
+        "discordBotApi": {
+          "id": "V7JTx5aK74eUuRIF",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "guildId": {
+          "__rl": true,
+          "value": "1550016802891898890",
+          "mode": "list",
+          "cachedResultName": "Servidor de Eduardo",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1551309330198953994",
+          "mode": "list",
+          "cachedResultName": "oportunidades-laborales",
+          "cachedResultUrl": "https://discord.com/channels/1550016802891898890/1551309330198953994"
+        },
+        "limit": 20,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        240,
+        288
+      ],
+      "id": "6e91fbd2-561b-4370-b0aa-312eb66948a0",
+      "name": "oportunidad-laboral",
+      "webhookId": "4f2ed289-b9ed-406d-874e-8be3f1246ba2",
+      "credentials": {
+        "discordBotApi": {
+          "id": "V7JTx5aK74eUuRIF",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "e8d8e184-11ce-4aaf-a4f4-70fc90e37b5f",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Preguntas",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "general",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chat-egresados",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "oportunidad-laboral",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preguntas": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "general": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Chat-egresados": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "oportunidad-laboral": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "99f4c8a2-ffe7-4cc6-a0c1-2666abdecd38",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8eee1f88abe166ed0f2090b06aa6871b4a306a9e63b11f4ad96e22e8a926d987"
+  },
+  "nodeGroups": [],
+  "id": "RAM8BQWd10Q9HDLI",
+  "tags": []
+}
