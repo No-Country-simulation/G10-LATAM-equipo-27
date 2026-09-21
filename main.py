@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from typing import Optional
 
-from base_datos import crear_tabla, guardar_interaccion
+from fastapi import FastAPI, Query
+
+from base_datos import crear_tabla, guardar_interaccion, listar_interacciones
 from limpieza import calcular_hash, limpiar_texto
 from modelos import SolicitudActividad
 
@@ -53,3 +55,16 @@ def procesar_actividad(solicitud: SolicitudActividad):
         "repetidas_omitidas": repetidas,
         "vacias_omitidas": vacias,
     }
+
+
+# Este endpoint sirve para consultar lo que ya está guardado. Mis compañeros lo pueden usar
+# para ver los mensajes con su estado, y se puede filtrar por canal o por estado
+# (por ejemplo: /interacciones?estado=pendiente). "limite" evita traer demasiadas filas de golpe.
+@app.get("/interacciones")
+def ver_interacciones(
+    canal: Optional[str] = None,
+    estado: Optional[str] = None,
+    limite: int = Query(100, ge=1, le=500),
+):
+    filas = listar_interacciones(canal, estado, limite)
+    return {"total": len(filas), "interacciones": filas}
