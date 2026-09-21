@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 
-from limpieza import limpiar_texto
+from base_datos import crear_tabla, guardar_interaccion
+from limpieza import calcular_hash, limpiar_texto
 from modelos import SolicitudActividad
 
 app = FastAPI(title="CommunityLab API")
+
+# creo la tabla al arrancar el servidor (si ya existe no hace nada)
+crear_tabla()
 
 
 # Este es el endpoint: la "ventanilla" que recibe el paquete JSON que va a mandar n8n.
@@ -11,7 +15,8 @@ app = FastAPI(title="CommunityLab API")
 # antes de entrar a la función; si algo está mal responde 422 y aquí ni se entra.
 @app.post("/procesar-actividad")
 def procesar_actividad(solicitud: SolicitudActividad):
-    textos_limpios = []
+    nuevas = 0
+    repetidas = 0
     vacias = 0
 
     for interaccion in solicitud.interacciones:
@@ -23,13 +28,28 @@ def procesar_actividad(solicitud: SolicitudActividad):
             vacias += 1
             continue
 
-        textos_limpios.append(texto)
+        hash_mensaje = calcular_hash(
+            solicitud.origen_comunidad, interaccion.canal, interaccion.autor, texto
+        )
+        es_nueva = guardar_interaccion(
+            solicitud.origen_comunidad,
+            solicitud.periodo_referencia,
+            interaccion.autor,
+            interaccion.canal,
+            interaccion.tipo,
+            texto,
+            hash_mensaje,
+        )
+        if es_nueva:
+            nuevas += 1
+        else:
+            repetidas += 1
 
     return {
         "status": "exito",
         "periodo_referencia": solicitud.periodo_referencia,
         "total_recibidas": len(solicitud.interacciones),
+        "guardadas_nuevas": nuevas,
+        "repetidas_omitidas": repetidas,
         "vacias_omitidas": vacias,
-        # esta lista es solo para ver el resultado de la limpieza; la voy a quitar después
-        "textos_limpios": textos_limpios,
     }
