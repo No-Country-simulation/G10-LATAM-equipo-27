@@ -1,110 +1,96 @@
-# G10-LATAM-equipo-27
-CommunityLab – Motor Inteligente de Transformación y Distribución para Comunidades Digitales
+# 📋 Informe de Sprint Review — Reunión 3
 
-# 📋 Informe de Sprint Review — Ingeniería de Sistemas Informáticos
-**Fecha de reunión:** Jueves, 17 de septiembre de 2026  
-**Proyecto:** Simulación No Country — Equipo G10-LATAM-27  
-**Fase Actual:** Etapa 1 — Cimentación e Infraestructura  
-
----
+**Fecha de reunión:** Lunes, 21 de septiembre de 2026
+**Proyecto:** Simulación No Country — Equipo G10-LATAM-27 · CommunityLab
+**Próxima sesión:** Jueves, 24 de septiembre de 2026
+**Fase actual:** Cierre de Etapa 1 (Cimentación / Ingesta) y arranque de Etapa 2 (Cerebro de IA)
 
 ## 📌 Resumen Ejecutivo
-El presente informe consolida los avances, decisiones técnicas, compromisos e infraestructura establecida durante la jornada del **17 de septiembre de 2026**. El objetivo primordial de este sprint ha sido sentar las bases organizativas y tecnológicas del proyecto, asegurando el control de versiones, la orquestación de tareas y la arquitectura inicial del software antes de abordar la integración de componentes de Inteligencia Artificial.
 
----
+La Reunión 3 dio seguimiento a los avances individuales del equipo, incorporó formalmente a dos nuevos integrantes (Cristian Astudillo y Francisco Villaverde) y ajustó el horario de las sesiones para acomodar las distintas zonas horarias. Se presentaron tres avances técnicos: el flujo de captura de mensajes de Discord (n8n + Python), un primer prototipo del "cerebro" de IA para análisis de sentimiento y copywriting (Groq), y el prototipo de frontend en Next.js. También se aprobó, en principio, centralizar en una sola cuenta el manejo de correo, APIs y accesos a IA del proyecto, y explorar Gemini/Gemma como LLM compartido.
 
-## 🛠️ 1. Ecosistema Tecnológico y Herramientas Organizacionales
+## 🕒 1. Logística y Nuevo Horario
 
-Se han habilitado e integrado formalmente las plataformas operativas para la gestión, control de versiones y colaboración del equipo:
+- Se incorporaron dos nuevos integrantes al equipo: **Cristian Astudillo** y **Francisco Villaverde**.
+- Se confirmaron alrededor de 8 personas conectadas en la sesión, la cual quedó grabada (a cargo de Alonso) para la generación de minutas.
+- Se ajustó el horario de las reuniones para reducir el impacto en los integrantes con husos horarios más tardíos (compañero conectado desde Chile):
 
-| Plataforma | Propósito Operativo | Enlace de Acceso |
-| :--- | :--- | :--- |
-| **GitHub** | Control de versiones y gestión del código fuente. | [Repositorio GitHub](...) |
-| **Google Drive** | Almacenamiento de reportes, documentación y minutas de reunión. | [Carpeta en Google Drive](...) |
-| **Trello** | Integración visual, trazabilidad de etapas y flujo de trabajo. | [Tablero en Trello](...) |
-| **Canva** | Mapeo visual del equipo, organización y diagramación inicial. | [Diseño en Canva](...) |
+| Zona horaria | Hora local |
+|---|---|
+| Chile (UTC-3) | 10:00 p.m. |
+| Colombia (UTC-5) | 8:00 p.m. |
+| CDMX / El Salvador / Honduras (UTC-6) | 7:00 p.m. |
+| Noroeste de México (UTC-7) | 6:00 p.m. |
 
-### Normativa de Reuniones
-* **Tolerancia máxima de ingreso:** 10 minutos.
-* **Duración máxima de sesión activa:** 1 hora.
+- Se confirman dos sprints por semana: **lunes** y **jueves**.
+- Se reforzó la diferencia entre los tres repositorios de información del proyecto: **NoCountry** (resumen sin detalle técnico para el cliente), **Minuta** (detalle técnico completo de cada sesión) y **README** (información técnica del desarrollo, este documento).
 
----
+## 🔀 2. Avances por Módulo del Pipeline
 
-## 🏗️ 2. Avances de la Etapa 1 — Cimentación
+### Ingesta de datos (Backend)
 
-**Objetivo Central:** Alinear las directrices del equipo y dejar lista la infraestructura técnica base antes de integrar modelos de IA.
+- Se construyó y probó el flujo de captura de mensajes de Discord, dividido en dos partes conectadas: un flujo en **n8n** que lee los mensajes del canal y arma el paquete en formato JSON, y un servicio en **Python** que valida que la información venga completa, limpia el texto de cada mensaje y descarta los que ya se hayan capturado antes, antes de guardarlos en una base de datos.
+- Prueba realizada sobre un servidor de Discord dedicado (canales: general, preguntas, casos de éxito/oportunidades laborales), con mensajes de prueba generados mediante un script apoyado en IA.
+- Resultado: **15 mensajes capturados exitosamente**, sin duplicados ni registros vacíos, guardados con estado "pendiente" y un identificador secuencial, listos para la etapa de curaduría.
+- Estado: **75% de avance**. El disparador ("trigger") del flujo es actualmente manual; queda pendiente cambiarlo a uno temporal o basado en eventos (evaluando si conviene resolverlo en Python).
+- Código subido al repositorio en una rama, con historial de commits disponible.
+- **Responsable:** Eduardo Alonso. Ingesta desde archivo (chat o lote en JSON/CSV) asignada a **Cristian Astudillo**, con apoyo de Alonso, para completar el pipeline inicial.
+- División de responsabilidades acordada: n8n para la captura de mensajes, Python para los agentes de análisis de datos (decisión abierta a la herramienta con la que cada quien se sienta más cómodo).
 
-### Asignación Inicial de Roles
-* **Project Manager (PM):** Liderazgo operativo, definición de entregables y estructuración del flujo en Trello.
-* **Backend:** Definición de arquitectura base para la generación de activos finales.
+### Curaduría (análisis de sentimiento y relevancia)
 
-### Definición Técnica y Arquitectura
-1. **Lenguaje Principal:** Implementación sobre **Python**.
-2. **Orquestación de Flujos:** Evaluación e integración potencial de **n8n** (plataforma de automatización de código abierto).
-3. **Estrategia de Dataset:**
-   * **Fase inicial:** Uso de conjunto de datos simulado/estático en formato **JSON** (basado en el PDF del problema).
-   * **Fase posterior:** Pruebas de integración mediante el servidor ya configurado **TechMarketing** para interactuar con mensajes en Discord.
-4. **Evaluación de Modelos de Lenguaje (LLMs):**
-   * Opción prioritaria: **Groq** (alta velocidad, costo gratuito, modelo *Llama 3.3*, previamente probado).
-   * Se mantienen otras alternativas en proceso de evaluación y definición.
+- Fernando presentó un prototipo del "cerebro" de IA, migrado de Gemini a **Groq** por bloqueos y límites de las otras opciones (Groq es gratuito y de respuesta rápida).
+- El prototipo recibe comentarios de prueba y, mediante un prompt diseñado por Fernando, determina el sentimiento general (positivo, negativo o neutral), extrae el tema principal y redacta un borrador de copy editable antes de continuar el proceso.
+- **Identificación de sentimiento: completada** (Fernando Frausto). **Puntuación de relevancia: pendiente** (Fernando Frausto). **Detección de temas clave y alineación de marca:** asignadas a **Samuel**. **Identificación de segmentación:** sin asignar.
+- Se acordó procesar mediante un scorecard solo los comentarios que alcancen el puntaje de relevancia necesario, descartando contenido no relevante o ajeno al proyecto.
+- Pendiente: Fernando usa actualmente una cuenta de prueba gratuita de n8n con ~10 días restantes; debe definir si continúa con n8n o migra por completo a Python para el "cerebro" de IA.
 
----
+### Copywriting
 
-## 🎉 3. Logros Principales del Sprint
+- Una vez curados los comentarios, esta etapa agrega el tono y la voz de la empresa antes de convertirlos en un producto listo para distribuir. **Responsable: Enoc Ramírez.**
+- Pendiente: integrar la gestión de APIs para distribuir automáticamente el contenido a las diferentes redes sociales.
+- El JSON de salida del prototipo de Fernando podría conectarse directamente con el flujo de captura de n8n/Python, facilitando la integración de ambas partes.
 
-Durante la sesión se concretaron exitosamente los siguientes entregables:
+### Frontend
 
-* 📄 **Análisis de Ejemplos:** Revisión y ejemplificación de entregas previas en formato PDF.
-* 🌐 **Pautas del Proyecto:** Creación del archivo `Communitylab-plan` con directrices de desarrollo en formato HTML.
-* 🎨 **Boceto Visual:** Representación inicial de las ideas del Dashboard en formato de imagen.
-* ⚙️ **Gobernanza:** Establecimiento de mecanismos de Organización, Control y Planeación.
-* 📁 **Estructura Documental:** Creación y configuración de la carpeta de trabajo en Google Drive.
-* 📊 **Tablero de Trello:** Configuración del tablero para el seguimiento de tareas.
-* 🧩 **Estructura Organizativa:** Diagramación del equipo de trabajo en Canva.
-* 💬 **Servidor de Pruebas:** Despliegue de un servidor con canales dedicados para pruebas de comunicación.
-* 🤖 **Bot de Asistencia:** Creación e integración de un bot automatizado para apoyo en transferencias de información.
+- Andrés Martínez presentó su avance, desarrollado en Visual Studio Code con apoyo intensivo de IA (ChatGPT), usando **Next.js/JavaScript**.
+- Funcionalidades planeadas: login con seguridad, asignación de roles (administradores, usuarios de solo lectura del dashboard, usuarios que aprueban publicaciones) y un carrusel de mensajes/testimonios destacados.
+- Se contemplan al menos dos vistas separadas (dashboard y aprobación de publicaciones) más una vista integrada.
+- La IA le ha proporcionado ejemplos en JSON para validar el frontend de forma aislada antes de integrarlo con el backend.
+- Herramientas de prototipado sugeridas: **Google AI Studio** (backend) y **Google Stitch** (frontend).
 
----
+## ⚙️ 3. Decisiones de Gobernanza y Herramientas Compartidas
 
-## ⚠️ 4. Backlog, Desafíos Técnicos y Plan de Mitigación
+- **Cuenta de correo centralizada** (propuesta de Enoc, aprobada en principio): administrará de forma unificada las APIs (Groq, Gemini/Google Cloud, OCI), el acceso a Google Drive y el registro de las conversaciones de IA de cada integrante. Responsable de su creación y configuración: **Enoc Ramírez**.
+  - Convención de nombres para chats de IA: `nombre + tema + número` (ej. "Alonso – JSON – 1"), respetando que cada persona trabaje en su propio hilo.
+  - Ante pérdida de contexto en conversaciones largas, se recomienda abrir un chat nuevo con un resumen de lo avanzado.
+  - Cada integrante debe reportar qué IA utiliza, para habilitar su acceso bajo la cuenta centralizada; quienes tengan cuentas premium propias pueden conservarlas, compartiendo un resumen de su trabajo.
+  - Las credenciales existirán solo mientras dure el proyecto.
+  - Se mencionó la opción de herramientas tipo "router" entre modelos (ej. OpenRouter) para saltar entre LLMs sin perder contexto; queda como opción a evaluar, no como decisión tomada.
+- **Adopción de Gemini/Gemma como LLM compartido** (en exploración): cuota gratuita de ~1,500 solicitudes/día (10-15 por minuto), posibilidad de generar múltiples API keys sin duplicar el consumo, ventana de contexto de ~256,000 tokens, capacidades multimodales. Se probaron dos tamaños de modelo con resultados favorables: 31B (mejor para copywriting) y 27B (mejor para curaduría/análisis). Se generarán API keys individuales bajo la cuenta centralizada para pruebas del equipo.
+- **Google Drive** del proyecto se centralizará bajo la nueva cuenta (actualmente bajo la cuenta de Alonso de forma temporal), para minutas, Excel de seguimiento e imágenes.
 
-### Tareas Pendientes en Backlog
-1. Definición e incorporación de roles requeridos para las etapas subsiguientes.
-2. Preparación de la primera Demostración (Demo) funcional del software.
+## ⚠️ 4. Backlog y Bloqueos Abiertos
 
-### Desafío Técnico Identificado y Mitigación
-> **Problema:** Dificultad para realizar pruebas en tiempo real con datos no estructurados provenientes de Discord o redes de comunidad (*Communitylab*).  
-> **Solución/Mitigación:** Se iniciará el flujo de procesamiento con datos o *datasets* fijos (JSON estático) como fase de validación inicial antes de pasar a la ingesta en tiempo real.
+| Pendiente | Detalle |
+|---|---|
+| Cambiar el trigger de ingesta de manual a temporal/por evento | Responsable: Eduardo. Se evaluará si conviene resolverlo en Python. |
+| Migrar el trabajo de n8n antes de que expire la prueba gratuita | Responsable: Fernando. Quedan ~10 días de periodo de prueba. |
+| Definir si el "cerebro" de IA sigue en n8n o migra a Python | Responsable: Fernando. Decisión dejada a su criterio. |
+| Generar API keys individuales de Gemini/Gemma | Sin asignar. |
+| Identificación de segmentación (curaduría) | Sin asignar. |
+| Completar la explicación del concepto de "Pipeline" a los nuevos integrantes | Sin asignar; quedó a medias por corte de la sesión. |
+| Unificación de todas las partes del código | Backlog general. |
+| Apertura de la cuenta de OCI | Backlog general. |
+| Pipeline para Object Storage (informe/reporte) | Backlog general. |
+| Pruebas de capacidad y respuesta del sistema | Backlog general. |
+| Roles aún sin tarea puntual en el pipeline | Francisco Villaverde, Eduardo Gracia, Miguel Sierra, Tania Orantes, Patricia Madrid. |
 
-### Infraestructura en OCI (Oracle Cloud Infrastructure)
-* **Plan Backend:** Creación de un bucket en *OCI Object Storage* (nivel *Always Free*) y generación de una URL con Solicitud Preautenticada (PAR - *Pre-Authenticated Request*). Esto evitará el uso complejo de SDKs y autenticaciones adicionales.
-* **Estado Actual:** Pendiente a la espera de la asignación/liberación de recursos en OCI.
+## 🚀 5. Próximos Pasos
 
----
+- Continuar el desarrollo del frontend (login, roles, carrusel) y validar el prototipo antes de integrarlo con el backend — **Andrés Martínez**.
+- Explorar herramientas de prototipado rápido (Google AI Studio y/o Google Stitch) — quien lo desee dentro del equipo.
+- Los nuevos integrantes (Cristian y Francisco) deben revisar la minuta y el resumen de NoCountry para ponerse al día.
+- Reportar qué IA utiliza cada integrante, para habilitar accesos bajo la cuenta centralizada — todo el equipo.
+- Próxima sesión: **jueves 24 de septiembre**, donde se espera completar la explicación de Pipeline pendiente y definir con más detalle las tareas por especialidad que aún no tienen responsable.
 
-## 🚀 5. Próximos Sprints y Hoja de Ruta (Roadmap)
-
-### Entrega Inmediata
-* 📅 **Fecha límite de la Etapa 1:** Lunes, 21 de septiembre de 2026.
-* 📏 **Entregable clave:** Definición formal de parámetros y métricas para la evaluación de sentimiento, clasificación de temas y puntuación (*scoring*).
-
----
-
-### Proyección de Etapas Futuras
-
-#### 🧠 Etapa 2 — Cerebro de IA *(Fricción Media | Duración: 2–3 días)*
-* **Objetivo:** Análisis de sentimiento/temas y generación de contenido (*copy*) personalizado por canal.
-* **Estrategia:** El equipo de datos diseñará *prompts* con técnica *few-shot* (ejemplos diferenciados para tono LinkedIn vs. tono FAQ) directamente en los playgrounds web de Groq o Claude.
-* **Herramientas de Nodos:** Tras validar los prompts manualmente, se migrará a herramientas visuales como **Flowise** (`flowiseai.com`) o **Langflow** (`langflow.org`) para encadenar el flujo (`Entrada → Sentimiento → Generación`).
-
-#### 🔄 Etapa 3 — Orquestación y Automatización *(Fricción Media-Alta)*
-* **Objetivo:** Construcción del flujo con bifurcaciones condicionales requeridas por el checklist del proyecto.
-* **Tecnología:** Desarrollo del workflow completo en **Python** o **n8n.io**, guardando los resultados directamente en **OCI Object Storage**.
-* **Nota Técnica:** Representa el punto de mayor fricción técnica del proyecto. Se recomienda que el rol Backend lidere esta fase con el apoyo del perfil *Vibe Coder*.
-
-#### 💻 Etapa 4 — Interfaz, Documentación y Demo *(Fricción Acotada)*
-* **Objetivo:** Cumplimiento integral del checklist de entrega final.
-* **Interfaz:** Creación de un panel de control interactivo simple en **Streamlit** para visualización y aprobación de activos.
-* **Despliegue:** Alojamiento en **Streamlit Community Cloud** para evitar la configuración compleja de Máquinas Virtuales (VMs). El requisito de OCI se dará por cumplido mediante el Object Storage (OCI Compute queda como diferencial opcional).
-* **Equipo Responsable:** Frontend + Vibe Coder apoyados en herramientas asistidas por IA (Claude Code, Cursor o Lovable).
-* **Documentación:** Archivo `README.md` con diagrama de arquitectura (Mermaid o draw.io) y video de demostración corto mediante **Loom**.
