@@ -72,6 +72,10 @@ class DiscordClient:
             return response.json()
         raise DiscordAPIError(f"Demasiados rate limits consecutivos en {method} {path}")
 
+    async def get_guild(self, guild_id: str) -> dict[str, Any]:
+        """Informacion basica del servidor (usada para el nombre en el paquete)."""
+        return await self._request("GET", f"/guilds/{guild_id}")
+
     async def get_text_channels(self, guild_id: str) -> list[dict[str, Any]]:
         """Canales de texto (type 0) y de anuncios (type 5) del servidor."""
         channels: list[dict[str, Any]] = await self._request("GET", f"/guilds/{guild_id}/channels")
