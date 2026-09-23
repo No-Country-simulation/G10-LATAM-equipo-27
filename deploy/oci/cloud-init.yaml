@@ -1,0 +1,18 @@
+#cloud-config
+# Se pega este archivo en "Advanced options > Init script" al crear la VM,
+# o se pasa con --user-data-file al usar la CLI de OCI.
+# Instala Docker y Git para poder clonar el repo y construir la imagen en la propia VM.
+
+package_update: true
+
+packages:
+  - git
+  - ca-certificates
+  - curl
+
+runcmd:
+  - curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  - sh /tmp/get-docker.sh
+  - usermod -aG docker opc || usermod -aG docker ubuntu || true
+  - systemctl enable docker
+  - systemctl start docker
