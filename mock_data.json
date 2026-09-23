@@ -1,27 +1,47 @@
 {
-    "origen_comunidad": "Discord_Grupo_ONE_G10",
-    "periodo_referencia": "Semana_04",
+    "origen_comunidad": "Discord_Bot_Directo",
     "interacciones": [
-      {
-        "id": 1,
-        "autor": "Mariana Souza",
-        "canal": "#logros-y-empleos",
-        "tipo": "testimonio",
-        "texto": "Comunidad, quede seleccionada para el puesto de Desarrolladora Junior de IA! El proyecto del curso de LangChain y OCI que construi en mi portfolio marco toda la diferencia en la entrevista tecnica. Muy agradecida con la comunidad por todo el apoyo!"
-      },
-      {
-        "id": 2,
-        "autor": "Lucas Albuquerque",
-        "canal": "#dudas-langgraph",
-        "tipo": "pregunta_tecnica",
-        "texto": "Tengo dudas sobre como estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. Alguien tiene un ejemplo practico de router?"
-      },
-      {
-        "id": 3,
-        "autor": "Carlos Mendoza",
-        "canal": "#feedback-cursos",
-        "tipo": "feedback",
-        "texto": "El módulo de automatización me pareció excelente, pero sería increíble si pudieran agregar más ejemplos prácticos sobre cómo conectar APIs externas."
-      }
+        {
+            "id": 1,
+            "autor": "isseigremory7244",
+            "canal": "general",
+            "texto": "dinosaurio"
+        },
+        {
+            "id": 2,
+            "autor": "sarg.67",
+            "canal": "chat-egresados",
+            "texto": "hoy tuve mi entrevista en una empresa trasnacional, pasé a la siguiente etapa!"
+        },
+        {
+            "id": 3,
+            "autor": "enoc0009",
+            "canal": "chat-egresados",
+            "texto": "Hola, Queria comentar mi gran logro, fue contratado como Ingeniero en la Nube, gracias por los cursos y dertificados que tienen disponibles en su plataforma, me ayudo a formarme y completar mi perfil profesional"
+        },
+        {
+            "id": 4,
+            "autor": "sarg.67",
+            "canal": "oportunidades-laborales",
+            "texto": "hoy tuve mi entrevista en una empresa trasnacional, pasé a la siguiente etapa!"
+        },
+        {
+            "id": 5,
+            "autor": "Andrés Paredes",
+            "canal": "oportunidades-laborales",
+            "texto": "Hoy tuve mi primera entrevista técnica gracias a los tips de la comunidad. Me pidieron explicar cómo funciona un agente ReAct y pude hacerlo. ¡Increíble!"
+        },
+        {
+            "id": 6,
+            "autor": "Iván Salazar",
+            "canal": "preguntas",
+            "texto": "¿Qué diferencia hay entre usar RecursiveCharacterTextSplitter y CharacterTextSplitter para RAG? ¿Cuándo conviene cada uno?"
+        },
+        {
+            "id": 7,
+            "autor": "Renata Flores",
+            "canal": "preguntas",
+            "texto": "En n8n el nodo HTTP Request me da error 422 al enviar el JSON a mi API de FastAPI. ¿Qué puede estar mal en el body?"
+        }
     ]
-  }
+}

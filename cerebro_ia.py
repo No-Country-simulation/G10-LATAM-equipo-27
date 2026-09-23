@@ -5,54 +5,48 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 
 # ==========================================
-# SCRIPT DE BACKEND PARA PRUEBAS RÁPIDAS EN TERMINAL
+# CEREBRO IA: MOTOR PRINCIPAL
 # ==========================================
 
-# 1. Carga segura de la clave de Groq desde el entorno local.
+# 1. Carga segura de variables
 load_dotenv()
 
-# 2. Conexión al LLM de Groq. 
-# Nota: La implementación priorizó Groq frente a Gemini debido a restricciones de 
-# autenticación de la cuenta en Google Cloud, asegurando así un entorno funcional.
+# 2. Conexión al LLM de Groq
 _modelo = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 llm = ChatGroq(model=_modelo, temperature=0.3)
 
-# 3. Prompt Template base de la arquitectura para extracción de datos.
+# 3. Prompt Estricto (Scorecard)
 template = """
-Eres un analista de comunidades digitales. Lee el siguiente mensaje extraído de Discord y realiza las siguientes tareas:
-1. Determina el Sentimiento general (Positivo, Negativo o Neutral).
-2. Extrae el Tema principal.
-3. Redacta un breve 'copy' (texto para redes sociales o FAQ) basado en el mensaje, listo para ser publicado, incluyendo 2 hashtags relevantes.
+ERES UN EVALUADOR ROBÓTICO ESTRICTO. TU ÚNICO TRABAJO ES FILTRAR MENSAJES DE DISCORD.
 
 Mensaje original: "{texto}"
 Canal de origen: {canal}
 
-Devuelve el resultado estrictamente en este formato:
-Sentimiento: [Tu análisis]
-Tema Principal: [Tu tema]
-Copy Generado: [Tu copy]
+REGLAS INQUEBRANTABLES:
+1. Si el mensaje es una pregunta corta (ej. "¿A qué hora?"), un saludo o un meme, su Relevancia es 20%.
+2. Si el mensaje es un caso de éxito, testimonio o queja profunda, su Relevancia es 80% o más.
+3. Si la Relevancia es MENOR A 70%, el 'Copy Generado' debe ser EXACTAMENTE "❌ DESCARTADO POR BAJA RELEVANCIA". (PROHIBIDO INVENTAR RESPUESTAS).
+
+DEVUELVE EXACTAMENTE ESTAS 4 LÍNEAS, SIN TEXTO EXTRA:
+Relevancia: [Tu porcentaje]%
+Sentimiento: [Positivo/Negativo/Neutral]
+Tema Principal: [Tema resumido]
+Copy Generado: [El copy redactado o ❌ DESCARTADO POR BAJA RELEVANCIA]
 """
 
-prompt = PromptTemplate(
-    input_variables=["texto", "canal"],
-    template=template
-)
+prompt = PromptTemplate(input_variables=["texto", "canal"], template=template)
 
-# 4. Construcción de la cadena de procesamiento.
+# 4. EXPORTAMOS LA CADENA (Para que app.py la pueda usar)
 cadena = prompt | llm
 
 def procesar_comunidad():
     print("Iniciando el Motor de IA con Groq...\n")
     
-    # 5. Carga de los datos simulados (Mock Data).
     with open('mock_data.json', 'r', encoding='utf-8') as archivo:
         datos = json.load(archivo)
         
-        # 6. Procesamiento secuencial de las interacciones.
         for interaccion in datos['interacciones']:
             print(f"--- Analizando Mensaje ID: {interaccion['id']} de {interaccion['autor']} ---")
-            
-            # Ejecución del modelo e impresión de resultados en consola.
             respuesta = cadena.invoke(
                 {"texto": interaccion["texto"], "canal": interaccion["canal"]}
             )
