@@ -4,3 +4,4 @@ fastapi
 uvicorn[standard]
 pydantic
 pandas
+discord.py
