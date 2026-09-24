@@ -16,7 +16,14 @@ CANALES = {
     "1551309330198953994": "#oportunidades-laborales",
 }
 
+from datetime import date
+
 ORIGEN_COMUNIDAD = "Discord_Grupo_ONE_G10"
+
+# fecha en la que arrancó el servidor de Discord; el periodo se cuenta desde aquí
+# (ojo: este cálculo no cruza años, se rompería si el proyecto sigue corriendo hasta enero)
+FECHA_INICIO = date(2026, 9, 21)
+SEMANA_INICIO = FECHA_INICIO.isocalendar().week
 
 
 def construir_paquete(mensajes: list) -> dict | None:
@@ -42,11 +49,11 @@ def construir_paquete(mensajes: list) -> dict | None:
     if not interacciones:
         return None
 
-    # tomo la fecha del mensaje más reciente para calcular la semana, igual que en n8n.
-    # en Python sale mucho más corto: isocalendar() ya hace el cálculo de la semana ISO,
-    # no tuve que escribir a mano la función que sí necesité en JavaScript
+    # tomo la fecha del mensaje más reciente para calcular la semana. Ya no es la semana
+    # del año, sino la semana desde que arrancó el servidor (FECHA_INICIO)
     fecha_reciente = max(m.created_at for m in mensajes)
-    semana = fecha_reciente.isocalendar().week
+    semana_del_anio = fecha_reciente.date().isocalendar().week
+    semana = semana_del_anio - SEMANA_INICIO + 1
 
     return {
         "origen_comunidad": ORIGEN_COMUNIDAD,
