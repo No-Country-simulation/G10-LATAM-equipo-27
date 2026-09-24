@@ -35,9 +35,22 @@ def test_usa_apodo_del_servidor_si_existe():
     assert interaccion.autor == "Mari"
 
 
-def test_descarta_mensajes_de_bots():
+def test_descarta_mensajes_de_bots_reales():
     mensaje = _mensaje_base(author={"id": "2", "username": "bot", "bot": True})
     assert mensaje_a_interaccion(mensaje, canal_nombre="general") is None
+
+
+def test_acepta_mensajes_de_webhook_aunque_bot_sea_true():
+    # Scripts de prueba (o integraciones como n8n) publican como webhook y
+    # Discord marca esos mensajes con bot=True; deben tratarse como
+    # contenido normal de la comunidad, no descartarse.
+    mensaje = _mensaje_base(
+        author={"id": "2", "username": "Lucas Albuquerque", "bot": True},
+        webhook_id="999",
+    )
+    interaccion = mensaje_a_interaccion(mensaje, canal_nombre="preguntas")
+    assert interaccion is not None
+    assert interaccion.autor == "Lucas Albuquerque"
 
 
 def test_descarta_mensajes_sin_texto():

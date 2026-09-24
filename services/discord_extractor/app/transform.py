@@ -17,15 +17,24 @@ def _nombre_autor(mensaje: dict[str, Any]) -> str:
 
 
 def _es_de_bot(mensaje: dict[str, Any]) -> bool:
+    """True solo para bots automatizados reales, no para mensajes de webhook.
+
+    Discord marca author.bot=True tanto en mensajes de bots automatizados
+    como en mensajes enviados via webhook (por ejemplo, scripts que simulan
+    distintos usuarios para generar datos de prueba). Estos ultimos traen
+    ademas un webhook_id y deben tratarse como contenido normal de la
+    comunidad, no descartarse.
+    """
     author = mensaje.get("author") or {}
-    return bool(author.get("bot"))
+    return bool(author.get("bot")) and not mensaje.get("webhook_id")
 
 
 def mensaje_a_interaccion(mensaje: dict[str, Any], *, canal_nombre: str) -> Interaccion | None:
     """Convierte un mensaje de Discord en una Interaccion, o None si debe descartarse.
 
-    Se descartan los mensajes de bots y los que no tienen texto (por ejemplo,
-    mensajes que solo traen un adjunto o un embed sin contenido).
+    Se descartan los mensajes de bots automatizados reales (ver _es_de_bot)
+    y los que no tienen texto (por ejemplo, mensajes que solo traen un
+    adjunto o un embed sin contenido).
     """
     if _es_de_bot(mensaje):
         return None
