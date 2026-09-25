@@ -1,96 +1,37 @@
-# 📋 Informe de Sprint Review — Reunión 3
+# 📋 Informe de Sprint Review — Reunión 4
 
-**Fecha de reunión:** Lunes, 21 de septiembre de 2026
-**Proyecto:** Simulación No Country — Equipo G10-LATAM-27 · CommunityLab
-**Próxima sesión:** Jueves, 24 de septiembre de 2026
-**Fase actual:** Cierre de Etapa 1 (Cimentación / Ingesta) y arranque de Etapa 2 (Cerebro de IA)
+## ℹ️ Información General
+* **Fecha y duración:** Jueves, 24 de septiembre de 2026 | ~1 hora y 30 minutos.
+* **Próxima sesión:** Sábado, 26 de septiembre de 2026 (hora tentativa a definir entre las 11:00 AM y las 12:00 MD, hora base GMT-6).
+* **Proyecto y equipo:** Simulación No Country — Equipo G10-LATAM-27 · CommunityLab.
+* **Fase actual:** Cierre formal de la Etapa 1 (Ingesta y Cimentación) y consolidación técnica de la Etapa 2 (Cerebro Analítico, Orquestación e Integración OCI).
+* **Objetivo principal:** Evaluar el avance de los módulos del MVP (frontend, bots de extracción, procesamiento analítico y backend), resolver los bloqueos críticos heredados de la Reunión 3 (expiración de cuentas de n8n vs. estandarización de stack), definir la arquitectura de conexión hacia OCI Object Storage y formalizar la asignación de roles bajo el marco de trabajo Scrum.
 
 ## 📌 Resumen Ejecutivo
+El equipo consolidó los componentes individuales del pipeline, tomando la decisión técnica de descartar n8n y unificar todo el flujo de ingesta y análisis en scripts/APIs desacopladas en Python, resolviendo el riesgo de costos y expiración de pruebas. Se priorizó un flujo base end-to-end funcional (extracción en Discord, curaduría, copywriting y almacenamiento en OCI Object Storage) antes de incorporar la lógica avanzada de interfaz y analítica.
 
-La Reunión 3 dio seguimiento a los avances individuales del equipo, incorporó formalmente a dos nuevos integrantes (Cristian Astudillo y Francisco Villaverde) y ajustó el horario de las sesiones para acomodar las distintas zonas horarias. Se presentaron tres avances técnicos: el flujo de captura de mensajes de Discord (n8n + Python), un primer prototipo del "cerebro" de IA para análisis de sentimiento y copywriting (Groq), y el prototipo de frontend en Next.js. También se aprobó, en principio, centralizar en una sola cuenta el manejo de correo, APIs y accesos a IA del proyecto, y explorar Gemini/Gemma como LLM compartido.
+## 💬 Temas Clave y Discusiones
+* 💻 **Evolución y simplificación del Frontend (Next.js):** Andrés Martínez presentó los avances en la interfaz, integrando vistas de métricas, análisis de sentimiento, aprobaciones, auditoría y control de acceso (login, roles para administradores, analistas y community managers). Se debatió mantener la UI centrada en las operaciones del Community Manager y la visualización gerencial, simplificando vistas para no sobrecargar el MVP antes de validar la conexión con los endpoints reales.
+* 🐍 **Resolución de ingesta y descarte formal de n8n:** Frente al bloqueo identificado en la Reunión 3 sobre la caducidad del plan gratuito de n8n y la inviabilidad de asumir costos mensuales recurrentes, se presentaron alternativas funcionales en Python puro. Eduardo Alonso y Cristian Astudillo demostraron la captura de mensajes hacia payloads JSON directamente consumibles mediante APIs internas, resolviendo el cuello de botella de orquestación.
+* 🧠 **Maduración del "Cerebro" de IA y scoring de relevancia:** Se exhibió el progreso del componente analítico (previamente migrado a Groq y evaluando Gemini/Gemma). El motor ahora segmenta mensajes destacados y descartados con base en umbrales de relevancia (70% - 75%), analizando sentimiento y generando borradores de copy. Adicionalmente, Fernando integró un mecanismo de priorización preliminar basado en métricas de interacción social (reacciones y respuestas de Discord) para optimizar el consumo de recursos de cómputo y tokens de inferencia.
+* ☁️ **Estrategia de persistencia en Oracle Cloud Infrastructure (OCI):** Con la incorporación de Cristian Astudillo, se definió la subida de artefactos a OCI Object Storage bajo el esquema *Always Free*. Se determinó almacenar tanto los registros estructurados crudos/procesados (archivos JSON) como los reportes semanales formales consolidados y textos de copywriting finalizados.
+* 👥 **Reorganización de células bajo Scrum:** Para resolver la falta de asignaciones puntuales detectada en la sesión anterior y garantizar que todo el equipo (incluyendo a integrantes que se incorporaron formalmente como Tania Orantes, Cristian Astudillo y Francisco Villaverde) tenga frentes claros, se acordó estructurar las tareas en cuatro células funcionales transversales.
 
-## 🕒 1. Logística y Nuevo Horario
+## 🤝 Acuerdos y Decisiones
+* ⚙️ **Adopción exclusiva de Python:** Queda oficialmente descartado n8n en el pipeline de producción para mitigar costos y problemas de despliegue; la totalidad del flujo de backend e ingesta se desarrollará en Python.
+* 📥 **Canal primario de entrada:** La captura se mantendrá estrictamente concentrada en Discord para cerrar el flujo inicial de punta a punta, posponiendo la expansión a otras redes para fases posteriores.
+* 🎯 **Flujo MVP prioritario:** Se establece una ruta crítica de integración básica que cubre: ingesta bruta de mensajes -> filtrado/curaduría -> generación de copies -> persistencia de reportes/JSON en OCI Object Storage.
+* 🗄️ **Persistencia histórica completa:** Se ratificó el almacenamiento tanto de los mensajes que alcanzaron el umbral de relevancia como de los descartados, garantizando trazabilidad y auditoría de decisiones del modelo.
+* 📅 **Definición de próxima reunión:** La siguiente sesión de sincronización técnica quedó acordada para el sábado 26 de septiembre, quedando pendiente votar la hora definitiva entre las 11:00 AM y las 12:00 MD (GMT-6).
 
-- Se incorporaron dos nuevos integrantes al equipo: **Cristian Astudillo** y **Francisco Villaverde**.
-- Se confirmaron alrededor de 8 personas conectadas en la sesión, la cual quedó grabada (a cargo de Alonso) para la generación de minutas.
-- Se ajustó el horario de las reuniones para reducir el impacto en los integrantes con husos horarios más tardíos (compañero conectado desde Chile):
+## 🚀 Plan de Acción / Tareas Pendientes
 
-| Zona horaria | Hora local |
-|---|---|
-| Chile (UTC-3) | 10:00 p.m. |
-| Colombia (UTC-5) | 8:00 p.m. |
-| CDMX / El Salvador / Honduras (UTC-6) | 7:00 p.m. |
-| Noroeste de México (UTC-7) | 6:00 p.m. |
-
-- Se confirman dos sprints por semana: **lunes** y **jueves**.
-- Se reforzó la diferencia entre los tres repositorios de información del proyecto: **NoCountry** (resumen sin detalle técnico para el cliente), **Minuta** (detalle técnico completo de cada sesión) y **README** (información técnica del desarrollo, este documento).
-
-## 🔀 2. Avances por Módulo del Pipeline
-
-### Ingesta de datos (Backend)
-
-- Se construyó y probó el flujo de captura de mensajes de Discord, dividido en dos partes conectadas: un flujo en **n8n** que lee los mensajes del canal y arma el paquete en formato JSON, y un servicio en **Python** que valida que la información venga completa, limpia el texto de cada mensaje y descarta los que ya se hayan capturado antes, antes de guardarlos en una base de datos.
-- Prueba realizada sobre un servidor de Discord dedicado (canales: general, preguntas, casos de éxito/oportunidades laborales), con mensajes de prueba generados mediante un script apoyado en IA.
-- Resultado: **15 mensajes capturados exitosamente**, sin duplicados ni registros vacíos, guardados con estado "pendiente" y un identificador secuencial, listos para la etapa de curaduría.
-- Estado: **75% de avance**. El disparador ("trigger") del flujo es actualmente manual; queda pendiente cambiarlo a uno temporal o basado en eventos (evaluando si conviene resolverlo en Python).
-- Código subido al repositorio en una rama, con historial de commits disponible.
-- **Responsable:** Eduardo Alonso. Ingesta desde archivo (chat o lote en JSON/CSV) asignada a **Cristian Astudillo**, con apoyo de Alonso, para completar el pipeline inicial.
-- División de responsabilidades acordada: n8n para la captura de mensajes, Python para los agentes de análisis de datos (decisión abierta a la herramienta con la que cada quien se sienta más cómodo).
-
-### Curaduría (análisis de sentimiento y relevancia)
-
-- Fernando presentó un prototipo del "cerebro" de IA, migrado de Gemini a **Groq** por bloqueos y límites de las otras opciones (Groq es gratuito y de respuesta rápida).
-- El prototipo recibe comentarios de prueba y, mediante un prompt diseñado por Fernando, determina el sentimiento general (positivo, negativo o neutral), extrae el tema principal y redacta un borrador de copy editable antes de continuar el proceso.
-- **Identificación de sentimiento: completada** (Fernando Frausto). **Puntuación de relevancia: pendiente** (Fernando Frausto). **Detección de temas clave y alineación de marca:** asignadas a **Samuel**. **Identificación de segmentación:** sin asignar.
-- Se acordó procesar mediante un scorecard solo los comentarios que alcancen el puntaje de relevancia necesario, descartando contenido no relevante o ajeno al proyecto.
-- Pendiente: Fernando usa actualmente una cuenta de prueba gratuita de n8n con ~10 días restantes; debe definir si continúa con n8n o migra por completo a Python para el "cerebro" de IA.
-
-### Copywriting
-
-- Una vez curados los comentarios, esta etapa agrega el tono y la voz de la empresa antes de convertirlos en un producto listo para distribuir. **Responsable: Enoc Ramírez.**
-- Pendiente: integrar la gestión de APIs para distribuir automáticamente el contenido a las diferentes redes sociales.
-- El JSON de salida del prototipo de Fernando podría conectarse directamente con el flujo de captura de n8n/Python, facilitando la integración de ambas partes.
-
-### Frontend
-
-- Andrés Martínez presentó su avance, desarrollado en Visual Studio Code con apoyo intensivo de IA (ChatGPT), usando **Next.js/JavaScript**.
-- Funcionalidades planeadas: login con seguridad, asignación de roles (administradores, usuarios de solo lectura del dashboard, usuarios que aprueban publicaciones) y un carrusel de mensajes/testimonios destacados.
-- Se contemplan al menos dos vistas separadas (dashboard y aprobación de publicaciones) más una vista integrada.
-- La IA le ha proporcionado ejemplos en JSON para validar el frontend de forma aislada antes de integrarlo con el backend.
-- Herramientas de prototipado sugeridas: **Google AI Studio** (backend) y **Google Stitch** (frontend).
-
-## ⚙️ 3. Decisiones de Gobernanza y Herramientas Compartidas
-
-- **Cuenta de correo centralizada** (propuesta de Enoc, aprobada en principio): administrará de forma unificada las APIs (Groq, Gemini/Google Cloud, OCI), el acceso a Google Drive y el registro de las conversaciones de IA de cada integrante. Responsable de su creación y configuración: **Enoc Ramírez**.
-  - Convención de nombres para chats de IA: `nombre + tema + número` (ej. "Alonso – JSON – 1"), respetando que cada persona trabaje en su propio hilo.
-  - Ante pérdida de contexto en conversaciones largas, se recomienda abrir un chat nuevo con un resumen de lo avanzado.
-  - Cada integrante debe reportar qué IA utiliza, para habilitar su acceso bajo la cuenta centralizada; quienes tengan cuentas premium propias pueden conservarlas, compartiendo un resumen de su trabajo.
-  - Las credenciales existirán solo mientras dure el proyecto.
-  - Se mencionó la opción de herramientas tipo "router" entre modelos (ej. OpenRouter) para saltar entre LLMs sin perder contexto; queda como opción a evaluar, no como decisión tomada.
-- **Adopción de Gemini/Gemma como LLM compartido** (en exploración): cuota gratuita de ~1,500 solicitudes/día (10-15 por minuto), posibilidad de generar múltiples API keys sin duplicar el consumo, ventana de contexto de ~256,000 tokens, capacidades multimodales. Se probaron dos tamaños de modelo con resultados favorables: 31B (mejor para copywriting) y 27B (mejor para curaduría/análisis). Se generarán API keys individuales bajo la cuenta centralizada para pruebas del equipo.
-- **Google Drive** del proyecto se centralizará bajo la nueva cuenta (actualmente bajo la cuenta de Alonso de forma temporal), para minutas, Excel de seguimiento e imágenes.
-
-## ⚠️ 4. Backlog y Bloqueos Abiertos
-
-| Pendiente | Detalle |
-|---|---|
-| Cambiar el trigger de ingesta de manual a temporal/por evento | Responsable: Eduardo. Se evaluará si conviene resolverlo en Python. |
-| Migrar el trabajo de n8n antes de que expire la prueba gratuita | Responsable: Fernando. Quedan ~10 días de periodo de prueba. |
-| Definir si el "cerebro" de IA sigue en n8n o migra a Python | Responsable: Fernando. Decisión dejada a su criterio. |
-| Generar API keys individuales de Gemini/Gemma | Sin asignar. |
-| Identificación de segmentación (curaduría) | Sin asignar. |
-| Completar la explicación del concepto de "Pipeline" a los nuevos integrantes | Sin asignar; quedó a medias por corte de la sesión. |
-| Unificación de todas las partes del código | Backlog general. |
-| Apertura de la cuenta de OCI | Backlog general. |
-| Pipeline para Object Storage (informe/reporte) | Backlog general. |
-| Pruebas de capacidad y respuesta del sistema | Backlog general. |
-| Roles aún sin tarea puntual en el pipeline | Francisco Villaverde, Eduardo Gracia, Miguel Sierra, Tania Orantes, Patricia Madrid. |
-
-## 🚀 5. Próximos Pasos
-
-- Continuar el desarrollo del frontend (login, roles, carrusel) y validar el prototipo antes de integrarlo con el backend — **Andrés Martínez**.
-- Explorar herramientas de prototipado rápido (Google AI Studio y/o Google Stitch) — quien lo desee dentro del equipo.
-- Los nuevos integrantes (Cristian y Francisco) deben revisar la minuta y el resumen de NoCountry para ponerse al día.
-- Reportar qué IA utiliza cada integrante, para habilitar accesos bajo la cuenta centralizada — todo el equipo.
-- Próxima sesión: **jueves 24 de septiembre**, donde se espera completar la explicación de Pipeline pendiente y definir con más detalle las tareas por especialidad que aún no tienen responsable.
-
+| Tarea / Acción a realizar | Responsable | Contexto o detalles clave |
+| :--- | :--- | :--- |
+| Finalización del backend base y endpoints de autenticación | Andrés Martínez | Implementar almacenamiento de usuarios y seguridad en base de datos relacional (SQL) y exponer la API para vincular la UI. |
+| Pipeline de ingesta y API de Discord en Python | Cristian Astudillo / Eduardo Alonso | Consolidar la extracción de mensajes en Python, formateo a JSON y generación de URL/payload para el consumo de la IA. |
+| Algoritmo de filtrado y scoring por interacciones | Fernando Frausto | Calibrar el balance entre volumen de reacciones en Discord y el umbral de relevancia (70-75%) en el motor de IA. |
+| Integración de guardado en OCI Object Storage | Cristian Astudillo | Configurar el bucket *Always Free*, implementar la subida de artefactos (JSON y reportes formateados) y documentar endpoints de salida. |
+| Adaptación del flujo de copywriting y tono de marca | Enoc Ramírez | Continuar el modelado del tono/voz empresarial para los mensajes aprobados, alineando la salida de los copys al JSON unificado. |
+| Detección de temas clave y métricas de segmentación | Samuel / Por confirmar | Completar la clasificación de temas dentro del flujo analítico que alimenta el panel de curaduría. |
+| Distribución formal en las 4 células Scrum | Todo el equipo (liderado por referentes técnicos) | Asignar roles operativos específicos a los integrantes restantes (Tania Orantes, Francisco Villaverde, Eduardo Gracia, Miguel Sierra, Patricia Madrid) en: Ingesta, Curaduría, Copywriting o Infraestructura OCI. |
