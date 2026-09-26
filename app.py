@@ -18,15 +18,20 @@ if 'resultados_descartados' not in st.session_state:
     st.session_state['resultados_descartados'] = []
 if 'analisis_completado' not in st.session_state:
     st.session_state['analisis_completado'] = False
+if 'manual_marca_texto' not in st.session_state:
+    st.session_state['manual_marca_texto'] = "Comunidad tech. Tono motivador, empático y profesional. Usar emojis."
 
 def rescatar_mensaje(item_id):
-    # Buscamos el mensaje en la lista de descartados y lo procesamos con la IA creativa
     for i, item in enumerate(st.session_state['resultados_descartados']):
         if item['id'] == item_id:
             mensaje = st.session_state['resultados_descartados'].pop(i)
             
             respuesta_nueva = cadena_rescate.invoke(
-                {"texto": mensaje["texto_original"], "canal": mensaje["canal"]}
+                {
+                    "texto": mensaje["texto_original"], 
+                    "canal": mensaje["canal"],
+                    "manual_marca": st.session_state['manual_marca_texto']
+                }
             )
             
             mensaje['ia'] = respuesta_nueva.model_dump()
@@ -36,7 +41,19 @@ def rescatar_mensaje(item_id):
             break 
 
 # ==========================================
-# 3. LECTURA DE DATOS Y EJECUCIÓN
+# 3. BARRA LATERAL: INYECCIÓN DEL MANUAL
+# ==========================================
+st.sidebar.header("⚙️ Cerebro IA")
+archivo_manual = st.sidebar.file_uploader("1. Sube tu Manual de Marca (.txt)", type=["txt"])
+
+if archivo_manual is not None:
+    st.session_state['manual_marca_texto'] = archivo_manual.getvalue().decode("utf-8")
+    st.sidebar.success("✅ Manual inyectado en la IA.")
+else:
+    st.sidebar.info("Usando personalidad por defecto.")
+
+# ==========================================
+# 4. LECTURA DE DATOS Y EJECUCIÓN PRINCIPAL
 # ==========================================
 with open('mock_data.json', 'r', encoding='utf-8') as archivo:
     datos = json.load(archivo)
@@ -54,7 +71,11 @@ if st.button("🚀 Ejecutar Análisis Multicanal (IA) a toda la bandeja"):
     
     for idx, interaccion in enumerate(interacciones):
         respuesta_pydantic = cadena.invoke(
-            {"texto": interaccion["texto"], "canal": interaccion["canal"]}
+            {
+                "texto": interaccion["texto"], 
+                "canal": interaccion["canal"],
+                "manual_marca": st.session_state['manual_marca_texto']
+            }
         )
         
         datos_ia = respuesta_pydantic.model_dump()
@@ -80,15 +101,14 @@ if st.button("🚀 Ejecutar Análisis Multicanal (IA) a toda la bandeja"):
     st.success("¡Análisis completado con éxito!")
 
 # ==========================================
-# 4. RENDERIZADO VISUAL CON PESTAÑAS Y DASHBOARD
+# 5. RENDERIZADO VISUAL (DASHBOARD Y PESTAÑAS)
 # ==========================================
 if st.session_state['analisis_completado']:
     
-    # --- NUEVO: DASHBOARD EJECUTIVO (MÉTRICAS) ---
+    # --- DASHBOARD EJECUTIVO (MÉTRICAS) ---
     st.markdown("---")
     st.header("📊 Dashboard de Rendimiento")
     
-    # Matemáticas en tiempo real
     total_destacados = len(st.session_state['resultados_destacados'])
     total_descartados = len(st.session_state['resultados_descartados'])
     total_procesados = total_destacados + total_descartados
@@ -145,6 +165,35 @@ if st.session_state['analisis_completado']:
                 st.markdown(f"📉 **{item['score']}%** | **{item['autor']}**: {item['texto_original']}")
             with col2:
                 st.button("♻️ Evaluar / Rescatar", key=f"resc_{item['id']}", on_click=rescatar_mensaje, args=(item['id'],))
+
+    # --- SECCIÓN 3: EXPORTACIÓN (PASO 7 FINAL) ---
+    st.markdown("---")
+    st.header("💾 Exportación de Activos (Hand-off)")
+    st.markdown("Descarga los copys aprobados en formato estructurado para tu equipo de redes o herramientas de automatización.")
+    
+    if st.session_state['resultados_destacados']:
+        datos_exportar = []
+        for item in st.session_state['resultados_destacados']:
+            datos_exportar.append({
+                "origen": f"Discord (#{item['canal']})",
+                "autor_original": item["autor"],
+                "segmento_objetivo": item["ia"]["segmento"],
+                "copy_linkedin": item["ia"]["copy_linkedin"],
+                "copy_twitter": item["ia"]["copy_twitter"],
+                "copy_discord": item["ia"]["copy_discord"]
+            })
+            
+        json_str = json.dumps(datos_exportar, indent=4, ensure_ascii=False)
+        
+        st.download_button(
+            label="📥 Descargar JSON de Copys Listos",
+            data=json_str,
+            file_name="activos_marketing_equipo27.json",
+            mime="application/json"
+        )
+    else:
+        st.warning("⚠️ Necesitas tener al menos un mensaje en Destacados para poder exportar.")
+
 else:
     with st.expander("Ver vista previa de los mensajes crudos (Sin analizar)", expanded=False):
         for i in interacciones:
