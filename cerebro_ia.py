@@ -3,22 +3,38 @@ import json
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
+# NUEVA IMPORTACIÓN: Usamos Pydantic nativo de Python para forzar el JSON, esquivando el bug de LangChain
+from pydantic import BaseModel, Field
 
 # ==========================================
 # CEREBRO IA: MOTOR PRINCIPAL
 # ==========================================
 
-# 1. Cargo mis variables de entorno de forma segura para no exponer mis API Keys
 load_dotenv()
 
-# 2. Establezco la conexión al LLM de Groq.
-# Defino la temperatura en 0.3 para que el modelo sea creativo pero no invente cosas (alucinaciones).
-# llama3-70b-8192 ya no existe en Groq; el reemplazo actual para cuentas free/dev es GPT-OSS 120B.
-_modelo = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+_modelo = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 llm = ChatGroq(model=_modelo, temperature=0.3)
 
-# 3. Defino mi plantilla maestra (Prompt). 
-# Aquí es donde le inyecto la inteligencia de negocio: Detección de Temas, Segmentación y Alineación de Marca.
+# ==========================================
+# CONTRATO DE DATOS (ARQUITECTURA PYDANTIC)
+# ==========================================
+# Creamos una clase estricta. El modelo de Groq usará "Function Calling" interno 
+# para llenar exactamente estos campos. Cero errores de formato.
+class FormatoSalida(BaseModel):
+    relevancia: int = Field(description="Porcentaje de relevancia del 0 al 100")
+    temas_clave: str = Field(description="Lista de 2 o 3 hashtags sobre el mensaje")
+    segmento: str = Field(description="Público objetivo del mensaje")
+    alineacion: str = Field(description="Justificación de cómo el copy cumple con la marca")
+    copy_linkedin: str = Field(description="Post para LinkedIn. Escribe 'DESCARTADO' si relevancia < 70")
+    copy_twitter: str = Field(description="Hilo corto para X (Twitter). Escribe 'DESCARTADO' si relevancia < 70")
+    copy_discord: str = Field(description="Resumen para Discord. Escribe 'DESCARTADO' si relevancia < 70")
+
+# Activamos el modo "Estructurado" nativo de LangChain acoplado a Pydantic
+llm_estructurado = llm.with_structured_output(FormatoSalida)
+
+# ==========================================
+# PLANTILLA MAESTRA (PROMPT)
+# ==========================================
 template = """
 ERES UN CURADOR DE CONTENIDO Y COMMUNITY MANAGER EXPERTO. TU TRABAJO ES FILTRAR MENSAJES DE DISCORD.
 
@@ -26,41 +42,32 @@ Mensaje original: "{texto}"
 Canal de origen: {canal}
 
 REGLAS INQUEBRANTABLES:
-1. RELEVANCIA: Preguntas operativas ("¿a qué hora?"), saludos o quejas sin contexto valen 20%. Casos de éxito, proyectos terminados, testimonios o debates técnicos profundos valen 80% o más.
-2. DETECCIÓN DE TEMAS: Extrae 2 o 3 hashtags exactos sobre de qué trata el mensaje (ej. #Python, #ÉxitoEstudiantil).
-3. SEGMENTACIÓN DE AUDIENCIA: Define a qué público va dirigido este mensaje (ej. Principiantes, Desarrolladores Senior, Reclutadores, Comunidad General).
-4. ALINEACIÓN DE MARCA: Somos una comunidad de educación tech. Nuestro tono es: Motivador, empático y profesional. Usamos emojis tech (🚀, 💻, 🧠).
-5. REGLA DE DESCARTE: Si la Relevancia es MENOR A 70%, el 'Copy Generado' debe ser EXACTAMENTE "❌ DESCARTADO". (PROHIBIDO INVENTAR RESPUESTAS).
-
-DEVUELVE EXACTAMENTE ESTAS 6 LÍNEAS, SIN TEXTO EXTRA:
-Relevancia: [Tu porcentaje]%
-Temas Clave: [Tus 2 o 3 hashtags]
-Segmento: [Público objetivo]
-Alineación: [Justifica en 1 línea cómo el copy cumple con la marca]
-Copy Generado: [El copy redactado con el tono de la marca, o ❌ DESCARTADO]
+1. RELEVANCIA: Preguntas operativas, saludos o quejas sin contexto valen 20. Casos de éxito, testimonios o debates profundos valen 80 o más.
+2. DETECCIÓN DE TEMAS: Extrae 2 o 3 hashtags exactos sobre de qué trata el mensaje.
+3. SEGMENTACIÓN DE AUDIENCIA: Define a qué público va dirigido este mensaje.
+4. ALINEACIÓN DE MARCA: Somos una comunidad de educación tech. Nuestro tono es: Motivador, empático y profesional. Usamos emojis tech.
+5. REGLA DE DESCARTE: Si la Relevancia es MENOR A 70, los copys generados DEBEN SER EXACTAMENTE la palabra "DESCARTADO".
 """
 
-# Empaqueto mi prompt con las variables dinámicas que recibiré de la interfaz visual (app.py)
 prompt = PromptTemplate(input_variables=["texto", "canal"], template=template)
 
-# 4. Exporto mi cadena uniendo el Prompt y el Modelo. 
-# Esto es lo que importará mi app.py para ejecutar el análisis masivo.
-cadena = prompt | llm
+# Unimos el prompt con nuestro modelo blindado
+cadena = prompt | llm_estructurado
 
 def procesar_comunidad():
-    # Función de prueba interna por si decido correr este archivo solo en la terminal sin levantar Streamlit
-    print("Iniciando el Motor de IA con Groq...\n")
-    
+    print("Iniciando el Motor de IA con Arquitectura Pydantic JSON...\n")
     with open('mock_data.json', 'r', encoding='utf-8') as archivo:
         datos = json.load(archivo)
         
-        for interaccion in datos['interacciones']:
-            print(f"--- Analizando Mensaje ID: {interaccion.get('id', 'N/A')} de {interaccion['autor']} ---")
-            respuesta = cadena.invoke(
-                {"texto": interaccion["texto"], "canal": interaccion["canal"]}
-            )
-            print(respuesta.content)
-            print("\n" + "="*50 + "\n")
+        interaccion = datos['interacciones'][0]
+        print(f"--- Analizando Mensaje ID: {interaccion.get('id', 'N/A')} de {interaccion['autor']} ---")
+        
+        # Al invocar la cadena, la respuesta ya no es texto libre, ¡es un objeto Pydantic perfecto!
+        respuesta = cadena.invoke({"texto": interaccion["texto"], "canal": interaccion["canal"]})
+        
+        print("\n--- RESPUESTA JSON PERFECTA ---")
+        # model_dump() convierte el objeto en un diccionario de Python estándar
+        print(json.dumps(respuesta.model_dump(), indent=4, ensure_ascii=False))
 
 if __name__ == "__main__":
     procesar_comunidad()
