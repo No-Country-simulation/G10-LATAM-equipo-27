@@ -35,10 +35,19 @@ def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje
     """Guarda un mensaje. Regresa True si era nuevo y False si ya existía (repetido)."""
     conexion = sqlite3.connect(RUTA_BD)
     try:
-        # INSERT OR IGNORE: si el hash ya existe no da error, simplemente no inserta nada
-        cursor = conexion.execute(
+        # antes usaba INSERT OR IGNORE directo, pero eso gasta un id de AUTOINCREMENT
+        # incluso cuando el mensaje ya existía (el contador de SQLite avanza aunque el
+        # insert se descarte). Por eso primero pregunto si el hash ya existe, y solo
+        # si no existe hago el INSERT: así el id solo sube con mensajes de verdad nuevos
+        existe = conexion.execute(
+            "SELECT 1 FROM interacciones WHERE hash = ?", (hash_mensaje,)
+        ).fetchone()
+        if existe:
+            return False
+
+        conexion.execute(
             """
-            INSERT OR IGNORE INTO interacciones
+            INSERT INTO interacciones
             (hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, creado_en)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -54,8 +63,7 @@ def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje
             ),
         )
         conexion.commit()
-        # rowcount vale 1 si insertó y 0 si lo ignoró por repetido
-        return cursor.rowcount == 1
+        return True
     finally:
         conexion.close()
 
