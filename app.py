@@ -1,6 +1,5 @@
 import streamlit as st
 import json
-# Importamos ambas IAs: la estricta (cadena) y la creativa (cadena_rescate)
 from cerebro_ia import cadena, cadena_rescate
 
 # ==========================================
@@ -21,21 +20,18 @@ if 'analisis_completado' not in st.session_state:
     st.session_state['analisis_completado'] = False
 
 def rescatar_mensaje(item_id):
+    # Buscamos el mensaje en la lista de descartados y lo procesamos con la IA creativa
     for i, item in enumerate(st.session_state['resultados_descartados']):
         if item['id'] == item_id:
-            # 1. Extraemos el mensaje de la lista de descartados
             mensaje = st.session_state['resultados_descartados'].pop(i)
             
-            # 2. Obligamos a la IA de Rescate a re-escribir los copys
             respuesta_nueva = cadena_rescate.invoke(
                 {"texto": mensaje["texto_original"], "canal": mensaje["canal"]}
             )
             
-            # 3. Actualizamos el JSON interno con los textos creativos y el Score perfecto
             mensaje['ia'] = respuesta_nueva.model_dump()
             mensaje['score'] = 100 
             
-            # 4. Lo inyectamos a los destacados para que se dibuje en las pestañas
             st.session_state['resultados_destacados'].append(mensaje)
             break 
 
@@ -84,21 +80,42 @@ if st.button("🚀 Ejecutar Análisis Multicanal (IA) a toda la bandeja"):
     st.success("¡Análisis completado con éxito!")
 
 # ==========================================
-# 4. RENDERIZADO VISUAL CON PESTAÑAS
+# 4. RENDERIZADO VISUAL CON PESTAÑAS Y DASHBOARD
 # ==========================================
 if st.session_state['analisis_completado']:
     
+    # --- NUEVO: DASHBOARD EJECUTIVO (MÉTRICAS) ---
+    st.markdown("---")
+    st.header("📊 Dashboard de Rendimiento")
+    
+    # Matemáticas en tiempo real
+    total_destacados = len(st.session_state['resultados_destacados'])
+    total_descartados = len(st.session_state['resultados_descartados'])
+    total_procesados = total_destacados + total_descartados
+    
+    promedio_relevancia = 0
+    if total_destacados > 0:
+        promedio_relevancia = sum([item['score'] for item in st.session_state['resultados_destacados']]) / total_destacados
+        
+    col_met1, col_met2, col_met3, col_met4 = st.columns(4)
+    with col_met1:
+        st.metric(label="Total de Mensajes", value=total_procesados)
+    with col_met2:
+        st.metric(label="🔥 Aprobados (Marketing)", value=total_destacados)
+    with col_met3:
+        st.metric(label="🗑️ Ruido Filtrado", value=total_descartados)
+    with col_met4:
+        st.metric(label="🎯 Promedio Relevancia VIP", value=f"{promedio_relevancia:.1f}%")
+
     # --- SECCIÓN 1: DESTACADOS ---
     st.markdown("---")
-    st.header(f"🔥 Mensajes Destacados ({len(st.session_state['resultados_destacados'])})")
+    st.subheader("Bandeja de Salida (Listos para Publicar)")
     
     if not st.session_state['resultados_destacados']:
         st.info("No se encontraron mensajes relevantes en esta tanda.")
         
     for item in st.session_state['resultados_destacados']:
         ia = item['ia']
-        
-        # Le ponemos una estrellita diferente si el score es 100 (Rescatado)
         icono = "🌟 RESCATADO" if item['score'] == 100 else f"⭐ {item['score']}% Relevancia"
         
         with st.expander(f"{icono} - De: {item['autor']} (Canal: #{item['canal']})", expanded=True):
@@ -116,7 +133,7 @@ if st.session_state['analisis_completado']:
 
     # --- SECCIÓN 2: DESCARTADOS ---
     st.markdown("---")
-    st.subheader(f"🗑️ Historial de Descartados ({len(st.session_state['resultados_descartados'])})")
+    st.subheader("Bandeja de Descartados (Filtro Automático)")
     
     with st.expander("Haz clic aquí para auditar la basura filtrada", expanded=True):
         if not st.session_state['resultados_descartados']:
