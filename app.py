@@ -104,7 +104,6 @@ if st.session_state['analisis_completado']:
                     "cualitativo_temas": item["ia"]["temas_clave"],
                     "cualitativo_segmento": item["ia"]["segmento"]
                 }
-                }
             })
             
         json_str = json.dumps(datos_exportar, indent=4, ensure_ascii=False)
