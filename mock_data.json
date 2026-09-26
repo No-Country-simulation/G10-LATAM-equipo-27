@@ -3,45 +3,51 @@
     "interacciones": [
         {
             "id": 1,
-            "autor": "isseigremory7244",
+            "autor": "enoc0009",
             "canal": "general",
-            "texto": "dinosaurio"
+            "texto": "jajajaja 😅"
         },
         {
             "id": 2,
-            "autor": "sarg.67",
-            "canal": "chat-egresados",
-            "texto": "hoy tuve mi entrevista en una empresa trasnacional, pasé a la siguiente etapa!"
+            "autor": "enoc0009",
+            "canal": "general",
+            "texto": "Buenas noches, Ing Fernando es usted un bot o la sugerencia es real?"
         },
         {
             "id": 3,
-            "autor": "enoc0009",
+            "autor": "isseigremory7244",
             "canal": "chat-egresados",
-            "texto": "Hola, Queria comentar mi gran logro, fue contratado como Ingeniero en la Nube, gracias por los cursos y dertificados que tienen disponibles en su plataforma, me ayudo a formarme y completar mi perfil profesional"
+            "texto": "¡Qué gusto saludar a la comunidad de egresados! ¿En qué proyectos andan trabajando últimamente? Siempre es bueno reconectar."
         },
         {
             "id": 4,
             "autor": "sarg.67",
-            "canal": "oportunidades-laborales",
+            "canal": "chat-egresados",
             "texto": "hoy tuve mi entrevista en una empresa trasnacional, pasé a la siguiente etapa!"
         },
         {
             "id": 5,
-            "autor": "Andrés Paredes",
+            "autor": "isseigremory7244",
             "canal": "oportunidades-laborales",
-            "texto": "Hoy tuve mi primera entrevista técnica gracias a los tips de la comunidad. Me pidieron explicar cómo funciona un agente ReAct y pude hacerlo. ¡Increíble!"
+            "texto": "Hola a todos, acabo de ver una vacante muy interesante en [empresa/sector] y quise compartirla por aquí. Les dejo el enlace por si alguien está buscando nuevas oportunidades."
         },
         {
             "id": 6,
-            "autor": "Iván Salazar",
-            "canal": "preguntas",
-            "texto": "¿Qué diferencia hay entre usar RecursiveCharacterTextSplitter y CharacterTextSplitter para RAG? ¿Cuándo conviene cada uno?"
+            "autor": "sarg.67",
+            "canal": "oportunidades-laborales",
+            "texto": "hoy tuve mi entrevista en una empresa trasnacional, pasé a la siguiente etapa!"
         },
         {
             "id": 7,
-            "autor": "Renata Flores",
+            "autor": "isseigremory7244",
             "canal": "preguntas",
-            "texto": "En n8n el nodo HTTP Request me da error 422 al enviar el JSON a mi API de FastAPI. ¿Qué puede estar mal en el body?"
+            "texto": "Cuando es el otro mundial?"
+        },
+        {
+            "id": 8,
+            "autor": "isseigremory7244",
+            "canal": "preguntas",
+            "texto": "Hola equipo, tengo una duda técnica y quería saber si alguien aquí tiene experiencia con [tema] que me pueda orientar un poco."
         }
     ]
 }
