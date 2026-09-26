@@ -84,7 +84,7 @@ if st.session_state['analisis_completado']:
         icono = "🌟 RESCATADO" if item['score'] == 100 else f"⭐ {item['score']}% Relevancia"
         with st.expander(f"{icono} - De: {item['autor']} (Canal: #{item['canal']})", expanded=True):
             st.markdown(f"**Mensaje Original:** {item['texto_original']}")
-            st.markdown(f"📊 **KPIs:** Temas: `{ia['temas_clave']}` | Segmento: `{ia['segmento']}`")
+            st.markdown(f"📊 **KPIs:** Sentimiento: `{ia.get('sentimiento', 'Neutral')}` | Temas: `{ia['temas_clave']}` | Segmento: `{ia['segmento']}`")
             st.caption(f"🧠 *Razonamiento IA:* {ia['razonamiento']}")
 
     st.markdown("---")
@@ -100,8 +100,10 @@ if st.session_state['analisis_completado']:
                 "mensaje_sin_modificar": item["texto_original"],
                 "kpis": {
                     "cuantitativo_relevancia": item["ia"]["relevancia"],
+                    "cualitativo_sentimiento": item.get("ia", {}).get("sentimiento", "Neutral"),
                     "cualitativo_temas": item["ia"]["temas_clave"],
                     "cualitativo_segmento": item["ia"]["segmento"]
+                }
                 }
             })
             
