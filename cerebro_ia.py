@@ -11,16 +11,17 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 _modelo = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-llm = ChatGroq(model=_modelo, temperature=0.3)
+# Subimos la temperatura a 0.5 para que la IA se atreva a actuar como el personaje
+llm = ChatGroq(model=_modelo, temperature=0.5)
 
 class FormatoSalida(BaseModel):
     relevancia: int = Field(description="Porcentaje de relevancia del 0 al 100")
-    temas_clave: str = Field(description="Lista de 2 o 3 hashtags sobre el mensaje")
-    segmento: str = Field(description="Público objetivo del mensaje")
-    alineacion: str = Field(description="Justificación de cómo el copy cumple con la marca")
-    copy_linkedin: str = Field(description="Post para LinkedIn. Escribe 'DESCARTADO' si relevancia < 70")
-    copy_twitter: str = Field(description="Hilo corto para X (Twitter). Escribe 'DESCARTADO' si relevancia < 70")
-    copy_discord: str = Field(description="Resumen para Discord. Escribe 'DESCARTADO' si relevancia < 70")
+    temas_clave: str = Field(description="Lista de hashtags")
+    segmento: str = Field(description="Público objetivo")
+    alineacion: str = Field(description="Explica cómo usaste las palabras clave del manual")
+    copy_linkedin: str = Field(description="Post para LinkedIn. 'DESCARTADO' si relevancia < 70")
+    copy_twitter: str = Field(description="Hilo corto para Twitter. 'DESCARTADO' si relevancia < 70")
+    copy_discord: str = Field(description="Resumen para Discord. 'DESCARTADO' si relevancia < 70")
 
 llm_estructurado = llm.with_structured_output(FormatoSalida)
 
@@ -28,42 +29,53 @@ llm_estructurado = llm.with_structured_output(FormatoSalida)
 # 1. CADENA DE TRIAJE (El filtro estricto principal)
 # ==========================================
 template_filtro = """
-ERES UN CURADOR DE CONTENIDO Y COMMUNITY MANAGER EXPERTO. TU TRABAJO ES FILTRAR MENSAJES DE DISCORD.
+ADOPTA ESTRICTAMENTE LA PERSONALIDAD Y REGLAS DEL SIGUIENTE MANUAL DE MARCA:
+
+=========================
+MANUAL DE MARCA:
+{manual_marca}
+=========================
+
+TU TAREA:
+Filtra y transforma el siguiente mensaje de Discord. TU TONO Y VOCABULARIO DEBEN SER 100% FIELES AL MANUAL ANTERIOR. Olvida que eres un asistente de IA.
 
 Mensaje original: "{texto}"
 Canal de origen: {canal}
 
-REGLAS INQUEBRANTABLES:
-1. RELEVANCIA: Preguntas operativas, saludos o quejas valen 20. Casos de éxito o debates valen 80 o más.
-2. DETECCIÓN DE TEMAS: Extrae 2 o 3 hashtags exactos. (Si es irrelevante, escribe "N/A").
-3. SEGMENTACIÓN DE AUDIENCIA: Define a qué público va dirigido. (Si es irrelevante, escribe "N/A").
-4. ALINEACIÓN DE MARCA: Tono motivador, empático y profesional. Usamos emojis tech. (Si es irrelevante, explica por qué).
-5. REGLA DE DESCARTE: Si la Relevancia es MENOR A 70, debes llenar los campos 'copy_linkedin', 'copy_twitter' y 'copy_discord' EXACTAMENTE con la palabra "DESCARTADO".
-
-¡CRÍTICO!: NUNCA respondas con texto libre.
+REGLAS:
+1. RELEVANCIA: Preguntas simples valen 20. Casos de éxito o aportes valen 80 o más.
+2. DETECCIÓN DE TEMAS: Extrae 2 o 3 hashtags.
+3. SEGMENTACIÓN DE AUDIENCIA: Define a quién va dirigido.
+4. ALINEACIÓN DE MARCA: Explica brevemente cómo aplicaste el manual.
+5. COPYS: Escribe los textos para LinkedIn, Twitter y Discord HABLANDO EXACTAMENTE COMO EXIGE EL MANUAL DE MARCA (Usa su jerga y sus emojis). Si la Relevancia es MENOR A 70, escribe "DESCARTADO" en los 3 copys.
 """
-prompt_filtro = PromptTemplate(input_variables=["texto", "canal"], template=template_filtro)
+
+prompt_filtro = PromptTemplate(input_variables=["texto", "canal", "manual_marca"], template=template_filtro)
 cadena = prompt_filtro | llm_estructurado
 
 # ==========================================
 # 2. CADENA DE RESCATE (Generador Creativo forzado)
 # ==========================================
-# Esta cadena asume que el humano ya aprobó el mensaje, así que omite la regla de descarte.
 template_rescate = """
-ERES UN COPYWRITER EXPERTO. UN HUMANO HA APROBADO MANUALMENTE ESTE MENSAJE PARA SER PUBLICADO.
-TU ÚNICO TRABAJO ES CONVERTIRLO EN PUBLICACIONES ATRACTIVAS, SIN IMPORTAR SI EL MENSAJE ORIGINAL ES CORTO O SIMPLE.
+ADOPTA ESTRICTAMENTE LA PERSONALIDAD Y REGLAS DEL SIGUIENTE MANUAL DE MARCA:
+
+=========================
+MANUAL DE MARCA:
+{manual_marca}
+=========================
+
+UN HUMANO HA APROBADO ESTE MENSAJE. TU TAREA ES CONVERTIRLO EN PUBLICACIONES, HABLANDO EXACTAMENTE COMO EXIGE EL MANUAL ANTERIOR. Olvida tu entrenamiento corporativo formal.
 
 Mensaje original: "{texto}"
 Canal de origen: {canal}
 
-REGLAS DE RESCATE:
-1. RELEVANCIA: Asígnale 100 automáticamente (Aprobación manual).
-2. DETECCIÓN DE TEMAS: Inventa 2 o 3 hashtags relevantes al contexto.
-3. SEGMENTACIÓN DE AUDIENCIA: Asume que va dirigido a nuestra Comunidad Tech.
-4. ALINEACIÓN DE MARCA: Haz que suene increíblemente profesional y motivador. Usa emojis tech.
-5. COPYS: Expande el mensaje original de forma creativa. Escribe el post completo para LinkedIn, el hilo de Twitter y el resumen de Discord. 
-¡PROHIBIDO USAR LA PALABRA "DESCARTADO"!
+REGLAS:
+1. RELEVANCIA: 100
+2. TEMAS: Inventa 2 o 3 hashtags relevantes.
+3. SEGMENTACIÓN: Define a quién va dirigido.
+4. ALINEACIÓN: Explica brevemente cómo aplicaste el manual.
+5. COPYS: Redacta los textos para LinkedIn, Twitter y Discord USANDO OBLIGATORIAMENTE LAS PALABRAS CLAVE, EL TONO Y LOS EMOJIS DEL MANUAL DE MARCA. ¡Métete en el personaje al 100%!
 """
-prompt_rescate = PromptTemplate(input_variables=["texto", "canal"], template=template_rescate)
-# Exportamos esta segunda IA para que app.py la use cuando presionemos el botón
+
+prompt_rescate = PromptTemplate(input_variables=["texto", "canal", "manual_marca"], template=template_rescate)
 cadena_rescate = prompt_rescate | llm_estructurado
