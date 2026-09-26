@@ -1,6 +1,7 @@
 import streamlit as st
 import json
-from cerebro_ia import cadena
+# Importamos ambas IAs: la estricta (cadena) y la creativa (cadena_rescate)
+from cerebro_ia import cadena, cadena_rescate
 
 # ==========================================
 # 1. CONFIGURACIÓN DE LA INTERFAZ VISUAL
@@ -10,7 +11,7 @@ st.title("🤖 Panel de Curaduría IA - Equipo 27")
 st.markdown("Filtra automáticamente los mensajes de Discord separando el oro del ruido.")
 
 # ==========================================
-# 2. GESTIÓN DE ESTADO
+# 2. GESTIÓN DE ESTADO Y CALLBACKS 
 # ==========================================
 if 'resultados_destacados' not in st.session_state:
     st.session_state['resultados_destacados'] = []
@@ -18,6 +19,25 @@ if 'resultados_descartados' not in st.session_state:
     st.session_state['resultados_descartados'] = []
 if 'analisis_completado' not in st.session_state:
     st.session_state['analisis_completado'] = False
+
+def rescatar_mensaje(item_id):
+    for i, item in enumerate(st.session_state['resultados_descartados']):
+        if item['id'] == item_id:
+            # 1. Extraemos el mensaje de la lista de descartados
+            mensaje = st.session_state['resultados_descartados'].pop(i)
+            
+            # 2. Obligamos a la IA de Rescate a re-escribir los copys
+            respuesta_nueva = cadena_rescate.invoke(
+                {"texto": mensaje["texto_original"], "canal": mensaje["canal"]}
+            )
+            
+            # 3. Actualizamos el JSON interno con los textos creativos y el Score perfecto
+            mensaje['ia'] = respuesta_nueva.model_dump()
+            mensaje['score'] = 100 
+            
+            # 4. Lo inyectamos a los destacados para que se dibuje en las pestañas
+            st.session_state['resultados_destacados'].append(mensaje)
+            break 
 
 # ==========================================
 # 3. LECTURA DE DATOS Y EJECUCIÓN
@@ -37,26 +57,22 @@ if st.button("🚀 Ejecutar Análisis Multicanal (IA) a toda la bandeja"):
     total = len(interacciones)
     
     for idx, interaccion in enumerate(interacciones):
-        # 1. Mandamos el mensaje a la IA (Nos devuelve un objeto Pydantic gracias al Paso 2)
         respuesta_pydantic = cadena.invoke(
             {"texto": interaccion["texto"], "canal": interaccion["canal"]}
         )
         
-        # 2. Convertimos el objeto a un diccionario de Python fácil de manejar
         datos_ia = respuesta_pydantic.model_dump()
         score = datos_ia["relevancia"]
         
-        # 3. Empaquetamos el resultado completo
         resultado_item = {
             "id": interaccion.get("id", idx),
             "autor": interaccion["autor"],
             "canal": interaccion["canal"],
             "texto_original": interaccion["texto"],
-            "ia": datos_ia, # <-- Aquí guardamos todas las cajitas del JSON
+            "ia": datos_ia, 
             "score": score
         }
         
-        # 4. El Filtro Maestro
         if score >= 70:
             st.session_state['resultados_destacados'].append(resultado_item)
         else:
@@ -80,18 +96,17 @@ if st.session_state['analisis_completado']:
         st.info("No se encontraron mensajes relevantes en esta tanda.")
         
     for item in st.session_state['resultados_destacados']:
-        ia = item['ia'] # Extraemos el JSON del mensaje actual
+        ia = item['ia']
         
-        with st.expander(f"⭐ {item['score']}% Relevancia - De: {item['autor']} (Canal: #{item['canal']})", expanded=True):
+        # Le ponemos una estrellita diferente si el score es 100 (Rescatado)
+        icono = "🌟 RESCATADO" if item['score'] == 100 else f"⭐ {item['score']}% Relevancia"
+        
+        with st.expander(f"{icono} - De: {item['autor']} (Canal: #{item['canal']})", expanded=True):
             st.markdown(f"**Mensaje Original:** {item['texto_original']}")
-            
-            # Mostramos los metadatos de segmentación limpios
             st.markdown(f"🏷️ **Temas:** `{ia['temas_clave']}` | 🎯 **Segmento:** `{ia['segmento']}`")
             st.caption(f"✨ *Alineación de Marca:* {ia['alineacion']}")
             
-            # ¡MAGIA VISUAL! Creamos 3 pestañas para los copys
             tab1, tab2, tab3 = st.tabs(["💼 LinkedIn", "🐦 X (Twitter)", "🎮 Discord"])
-            
             with tab1:
                 st.text_area("Copy Corporativo (Editable):", ia['copy_linkedin'], height=150, key=f"in_{item['id']}")
             with tab2:
@@ -103,11 +118,16 @@ if st.session_state['analisis_completado']:
     st.markdown("---")
     st.subheader(f"🗑️ Historial de Descartados ({len(st.session_state['resultados_descartados'])})")
     
-    with st.expander("Haz clic aquí para auditar la basura filtrada", expanded=False):
+    with st.expander("Haz clic aquí para auditar la basura filtrada", expanded=True):
         if not st.session_state['resultados_descartados']:
             st.info("No hubo mensajes descartados.")
+            
         for item in st.session_state['resultados_descartados']:
-            st.markdown(f"📉 **{item['score']}%** | **{item['autor']}**: {item['texto_original']}")
+            col1, col2 = st.columns([8, 2])
+            with col1:
+                st.markdown(f"📉 **{item['score']}%** | **{item['autor']}**: {item['texto_original']}")
+            with col2:
+                st.button("♻️ Evaluar / Rescatar", key=f"resc_{item['id']}", on_click=rescatar_mensaje, args=(item['id'],))
 else:
     with st.expander("Ver vista previa de los mensajes crudos (Sin analizar)", expanded=False):
         for i in interacciones:
