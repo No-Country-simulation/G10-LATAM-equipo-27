@@ -88,26 +88,55 @@ if st.session_state['analisis_completado']:
             st.caption(f"🧠 *Razonamiento IA:* {ia['razonamiento']}")
 
     st.markdown("---")
-    st.header("💾 Exportación para Equipo de Copywriting")
-    
-    if st.session_state['resultados_destacados']:
-        datos_exportar = []
-        for item in st.session_state['resultados_destacados']:
-            datos_exportar.append({
-                "id_mensaje": item["id"],
-                "canal_origen": f"#{item['canal']}",
-                "autor": item["autor"],
-                "mensaje_sin_modificar": item["texto_original"],
-                "kpis": {
-                    "cuantitativo_relevancia": item["ia"]["relevancia"],
-                    "cualitativo_sentimiento": item.get("ia", {}).get("sentimiento", "Neutral"),
-                    "cualitativo_temas": item["ia"]["temas_clave"],
-                    "cualitativo_segmento": item["ia"]["segmento"]
-                }
-            })
+    st.subheader("Bandeja de Descartados")
+    with st.expander("Haz clic aquí para auditar la basura y rescatar mensajes", expanded=True):
+        if not st.session_state['resultados_descartados']:
+            st.write("No hay mensajes descartados en esta tanda.")
+        for item in st.session_state['resultados_descartados']:
+            col1, col2 = st.columns([8, 2])
+            with col1: st.markdown(f"📉 **{item['score']}%** | **{item['autor']}**: {item['texto_original']}")
+            with col2: st.button("♻️ Rescatar", key=f"resc_{item['id']}", on_click=rescatar_mensaje, args=(item['id'],))
             
-        json_str = json.dumps(datos_exportar, indent=4, ensure_ascii=False)
-        st.download_button("📥 Descargar JSON Base", data=json_str, file_name="datos_base.json", mime="application/json")
+    st.header("💾 Exportación de Datos")
+    col_exp1, col_exp2 = st.columns(2)
+    with col_exp1:
+        if st.session_state['resultados_destacados']:
+            datos_destacados = []
+            for item in st.session_state['resultados_destacados']:
+                datos_destacados.append({
+                    "id_mensaje": item["id"],
+                    "canal_origen": f"#{item['canal']}",
+                    "autor": item["autor"],
+                    "mensaje_sin_modificar": item["texto_original"],
+                    "kpis": {
+                        "cuantitativo_relevancia": item["ia"]["relevancia"],
+                        "cualitativo_sentimiento": item.get("ia", {}).get("sentimiento", "Neutral"),
+                        "cualitativo_temas": item["ia"]["temas_clave"],
+                        "cualitativo_segmento": item["ia"]["segmento"]
+                    }
+                })
+                
+            json_destacados = json.dumps(datos_destacados, indent=4, ensure_ascii=False)
+            st.download_button("📥 Descargar Aprobados (JSON)", data=json_destacados, file_name="datos_aprobados.json", mime="application/json")
+
+    with col_exp2:
+        if st.session_state['resultados_descartados']:
+            datos_descartados = []
+            for item in st.session_state['resultados_descartados']:
+                datos_descartados.append({
+                    "id_mensaje": item["id"],
+                    "canal_origen": f"#{item['canal']}",
+                    "autor": item["autor"],
+                    "mensaje_sin_modificar": item["texto_original"],
+                    "kpis": {
+                        "cuantitativo_relevancia": item["ia"]["relevancia"],
+                        "cualitativo_sentimiento": item.get("ia", {}).get("sentimiento", "Neutral"),
+                        "razon_descarte": item["ia"]["razonamiento"]
+                    }
+                })
+                
+            json_descartados = json.dumps(datos_descartados, indent=4, ensure_ascii=False)
+            st.download_button("🗑️ Descargar Descartados (JSON)", data=json_descartados, file_name="datos_descartados.json", mime="application/json")
 else:
     with st.expander("Ver vista previa", expanded=False):
         for i in interacciones: st.write(f"- **{i['autor']}** (#{i['canal']}): {i['texto']}")
