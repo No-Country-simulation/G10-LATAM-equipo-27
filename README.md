@@ -1,37 +1,35 @@
-# 📋 Informe de Sprint Review — Reunión 4
+# 📋 Informe de Sprint Review — Reunión 5
 
 ## ℹ️ Información General
-* **Fecha y duración:** Jueves, 24 de septiembre de 2026 | ~1 hora y 30 minutos.
-* **Próxima sesión:** Sábado, 26 de septiembre de 2026 (hora tentativa a definir entre las 11:00 AM y las 12:00 MD, hora base GMT-6).
-* **Proyecto y equipo:** Simulación No Country — Equipo G10-LATAM-27 · CommunityLab.
-* **Fase actual:** Cierre formal de la Etapa 1 (Ingesta y Cimentación) y consolidación técnica de la Etapa 2 (Cerebro Analítico, Orquestación e Integración OCI).
-* **Objetivo principal:** Evaluar el avance de los módulos del MVP (frontend, bots de extracción, procesamiento analítico y backend), resolver los bloqueos críticos heredados de la Reunión 3 (expiración de cuentas de n8n vs. estandarización de stack), definir la arquitectura de conexión hacia OCI Object Storage y formalizar la asignación de roles bajo el marco de trabajo Scrum.
+* **Fecha:** Lunes, 28 de septiembre de 2026.
+* **Próxima sesión:** Jueves, 1 de octubre de 2026.
+* **Proyecto y equipo:** Simulación No Country — Equipo CommunityLab[cite: 2].
+* **Fase actual:** Consolidación de la Etapa 2 (Unificación de Ingesta y Cerebro IA) y modelado de negocio[cite: 2].
+* **Objetivo principal:** Unificar los scripts de extracción y curaduría en un flujo continuo, definir la identidad corporativa del cliente final para alinear el análisis de IA, planificar la migración del modelo fundacional para optimizar recursos, y establecer la arquitectura de persistencia en Oracle Cloud Infrastructure (OCI)[cite: 2].
 
 ## 📌 Resumen Ejecutivo
-El equipo consolidó los componentes individuales del pipeline, tomando la decisión técnica de descartar n8n y unificar todo el flujo de ingesta y análisis en scripts/APIs desacopladas en Python, resolviendo el riesgo de costos y expiración de pruebas. Se priorizó un flujo base end-to-end funcional (extracción en Discord, curaduría, copywriting y almacenamiento en OCI Object Storage) antes de incorporar la lógica avanzada de interfaz y analítica.
+En este sprint, el equipo logró un hito fundamental: la integración exitosa del motor de captura de datos con el cerebro de Inteligencia Artificial, permitiendo un procesamiento automatizado y modular que ya genera resultados tangibles[cite: 2]. Se definió la identidad de nuestro cliente objetivo ("Cloud Detech", del sector EdTech), lo que nos permite afinar el tono de voz corporativo del producto[cite: 2]. Además, se establecieron las bases para optimizar los costos operativos utilizando modelos de IA de última generación y se delegó la construcción del puente final de almacenamiento seguro en la nube[cite: 2]. El proyecto avanza sólidamente hacia un MVP completamente funcional.
 
 ## 💬 Temas Clave y Discusiones
-* 💻 **Evolución y simplificación del Frontend (Next.js):** Andrés Martínez presentó los avances en la interfaz, integrando vistas de métricas, análisis de sentimiento, aprobaciones, auditoría y control de acceso (login, roles para administradores, analistas y community managers). Se debatió mantener la UI centrada en las operaciones del Community Manager y la visualización gerencial, simplificando vistas para no sobrecargar el MVP antes de validar la conexión con los endpoints reales.
-* 🐍 **Resolución de ingesta y descarte formal de n8n:** Frente al bloqueo identificado en la Reunión 3 sobre la caducidad del plan gratuito de n8n y la inviabilidad de asumir costos mensuales recurrentes, se presentaron alternativas funcionales en Python puro. Eduardo Alonso y Cristian Astudillo demostraron la captura de mensajes hacia payloads JSON directamente consumibles mediante APIs internas, resolviendo el cuello de botella de orquestación.
-* 🧠 **Maduración del "Cerebro" de IA y scoring de relevancia:** Se exhibió el progreso del componente analítico (previamente migrado a Groq y evaluando Gemini/Gemma). El motor ahora segmenta mensajes destacados y descartados con base en umbrales de relevancia (70% - 75%), analizando sentimiento y generando borradores de copy. Adicionalmente, Fernando integró un mecanismo de priorización preliminar basado en métricas de interacción social (reacciones y respuestas de Discord) para optimizar el consumo de recursos de cómputo y tokens de inferencia.
-* ☁️ **Estrategia de persistencia en Oracle Cloud Infrastructure (OCI):** Con la incorporación de Cristian Astudillo, se definió la subida de artefactos a OCI Object Storage bajo el esquema *Always Free*. Se determinó almacenar tanto los registros estructurados crudos/procesados (archivos JSON) como los reportes semanales formales consolidados y textos de copywriting finalizados.
-* 👥 **Reorganización de células bajo Scrum:** Para resolver la falta de asignaciones puntuales detectada en la sesión anterior y garantizar que todo el equipo (incluyendo a integrantes que se incorporaron formalmente como Tania Orantes, Cristian Astudillo y Francisco Villaverde) tenga frentes claros, se acordó estructurar las tareas en cuatro células funcionales transversales.
+* 🏢 **Definición de Identidad de Negocio ("Cloud Detech"):** Para garantizar que el análisis de la IA y el Copywriting tengan un objetivo comercial claro, se estableció que la solución servirá a "Cloud Detech", una empresa ficticia de educación tecnológica en la nube (similar al modelo de Alura)[cite: 2]. Esto permitirá estandarizar el manual de marca y evaluar correctamente el sentimiento de la comunidad[cite: 2].
+* ⚙️ **Unificación del Motor Core (Ingesta + Curaduría):** Se validó la integración del código de extracción de Discord (desarrollado por Eduardo Alonso) con el motor de curaduría IA (desarrollado por Fernando)[cite: 2]. El sistema opera de manera modular utilizando Google Drive como puente, sobreescribiendo archivos JSON dinámicamente para que el equipo consulte siempre la versión más reciente sin duplicar procesos[cite: 2].
+* 🧠 **Optimización de Recursos IA (Transición Estratégica):** Se analizó la viabilidad de migrar el modelo actual hacia "Gemma 4"[cite: 2]. Esta decisión técnica busca aprovechar una mejor estructuración nativa de archivos JSON y una cuota de tokens mucho más amplia, garantizando que el sistema pueda procesar altos volúmenes de datos sin interrupciones ni costos adicionales[cite: 2].
+* 💻 **Evolución del Panel de Control (Frontend):** Se discutió con Andrés la necesidad de expandir la interfaz visual para reflejar el flujo de trabajo completo[cite: 2]. Se acordó la futura integración de ventanas específicas para visualizar la Ingesta, la Curaduría, el Copywriting y el estado de OCI[cite: 2].
+* ☁️ **Estrategia de Almacenamiento en OCI:** Se abordó el reto técnico del despliegue en la nube[cite: 2]. Cristian Astudillo tomará el liderazgo para configurar la cuenta gratuita y desarrollar el script en Python que automatice el envío de los reportes JSON (diarios o semanales) hacia OCI Object Storage[cite: 2].
+* 📈 **Métricas de Productividad y Metodología:** Se hizo un llamado al equipo para incrementar la interacción directa mediante *commits* en ramas individuales dentro de GitHub, lo cual impacta positivamente en las métricas de evaluación de la plataforma No Country[cite: 2].
 
 ## 🤝 Acuerdos y Decisiones
-* ⚙️ **Adopción exclusiva de Python:** Queda oficialmente descartado n8n en el pipeline de producción para mitigar costos y problemas de despliegue; la totalidad del flujo de backend e ingesta se desarrollará en Python.
-* 📥 **Canal primario de entrada:** La captura se mantendrá estrictamente concentrada en Discord para cerrar el flujo inicial de punta a punta, posponiendo la expansión a otras redes para fases posteriores.
-* 🎯 **Flujo MVP prioritario:** Se establece una ruta crítica de integración básica que cubre: ingesta bruta de mensajes -> filtrado/curaduría -> generación de copies -> persistencia de reportes/JSON en OCI Object Storage.
-* 🗄️ **Persistencia histórica completa:** Se ratificó el almacenamiento tanto de los mensajes que alcanzaron el umbral de relevancia como de los descartados, garantizando trazabilidad y auditoría de decisiones del modelo.
-* 📅 **Definición de próxima reunión:** La siguiente sesión de sincronización técnica quedó acordada para el sábado 26 de septiembre, quedando pendiente votar la hora definitiva entre las 11:00 AM y las 12:00 MD (GMT-6).
+* 📂 **Arquitectura Desacoplada:** Se mantendrá el enfoque de desarrollo modular; los scripts principales se ejecutan sin interferir entre sí, utilizando un archivo centralizado para la orquestación y protegiendo el código de cada desarrollador[cite: 2].
+* 🤖 **Actualización del Cerebro IA:** Fernando realizará pruebas con el modelo Gemma para validar mejoras en la velocidad, rendimiento y precisión de los formatos JSON antes de pasarlo a la rama principal[cite: 2].
+* 🤝 **Soporte Cruzado en Desarrollo:** Para acelerar la entrega visual del producto, Fernando apoyará a Andrés en la construcción de las vistas faltantes del Frontend[cite: 2].
+* 📅 **Cierre de Documentación:** Se priorizará la finalización inmediata de la documentación de negocio y tono de marca para que el motor de curaduría pueda realizar evaluaciones de sentimiento 100% alineadas a los valores de la empresa[cite: 2].
 
 ## 🚀 Plan de Acción / Tareas Pendientes
 
 | Tarea / Acción a realizar | Responsable | Contexto o detalles clave |
 | :--- | :--- | :--- |
-| Finalización del backend base y endpoints de autenticación | Andrés Martínez | Implementar almacenamiento de usuarios y seguridad en base de datos relacional (SQL) y exponer la API para vincular la UI. |
-| Pipeline de ingesta y API de Discord en Python | Cristian Astudillo / Eduardo Alonso | Consolidar la extracción de mensajes en Python, formateo a JSON y generación de URL/payload para el consumo de la IA. |
-| Algoritmo de filtrado y scoring por interacciones | Fernando Frausto | Calibrar el balance entre volumen de reacciones en Discord y el umbral de relevancia (70-75%) en el motor de IA. |
-| Integración de guardado en OCI Object Storage | Cristian Astudillo | Configurar el bucket *Always Free*, implementar la subida de artefactos (JSON y reportes formateados) y documentar endpoints de salida. |
-| Adaptación del flujo de copywriting y tono de marca | Enoc Ramírez | Continuar el modelado del tono/voz empresarial para los mensajes aprobados, alineando la salida de los copys al JSON unificado. |
-| Detección de temas clave y métricas de segmentación | Samuel / Por confirmar | Completar la clasificación de temas dentro del flujo analítico que alimenta el panel de curaduría. |
-| Distribución formal en las 4 células Scrum | Todo el equipo (liderado por referentes técnicos) | Asignar roles operativos específicos a los integrantes restantes (Tania Orantes, Francisco Villaverde, Eduardo Gracia, Miguel Sierra, Patricia Madrid) en: Ingesta, Curaduría, Copywriting o Infraestructura OCI. |
+| **Cierre de Documentación y Tono de Marca** | Líder de Copywriting (y equipo) | Finalizar la documentación de "Cloud Detech" para establecer los parámetros exactos de evaluación de la IA[cite: 2]. |
+| **Pruebas de optimización con Gemma** | Fernando Frausto | Modificar el orquestador IA para evaluar el rendimiento de generación JSON y manejo de tokens con el nuevo modelo[cite: 2]. |
+| **Desarrollo de Vistas del Dashboard** | Andrés Martínez (Apoyo: Fernando) | Integrar 4 nuevas secciones en la interfaz visual: Ingesta, Curaduría, Copywriting y OCI[cite: 2]. |
+| **Conexión y automatización OCI** | Cristian Astudillo | Desarrollar el script en Python para cargar automáticamente los archivos JSON procesados al Object Storage por lotes[cite: 2]. |
+| **Migración del código a GitHub** | Todo el equipo técnico | Trasladar los scripts probados en Colab/Drive hacia ramas individuales en el repositorio oficial para unificar la versión final[cite: 2]. |
