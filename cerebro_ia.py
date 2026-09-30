@@ -1,13 +1,21 @@
 import os
 import json
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 load_dotenv()
-_modelo = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
-llm = ChatGroq(model=_modelo, temperature=0.1)
+
+# 2. Leemos las variables nuevas de Google
+_modelo = os.getenv("GOOGLE_MODEL", "gemma-4-31b-it")
+
+# 3. Inicializamos el LLM con la clase correcta
+llm = ChatGoogleGenerativeAI(
+    model=_modelo, 
+    temperature=0.1,
+    google_api_key=os.environ.get("GOOGLE_API_KEY")
+)
 
 class FormatoSalida(BaseModel):
     relevancia: int = Field(description="KPI Cuantitativo: Importancia y profundidad del mensaje (0-100)")

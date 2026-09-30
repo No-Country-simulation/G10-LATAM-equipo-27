@@ -35,30 +35,34 @@ if st.button("🚀 Ejecutar Análisis de KPIs"):
     st.session_state['resultados_destacados'] = []
     st.session_state['resultados_descartados'] = []
     
-    barra_progreso = st.progress(0)
-    total = len(interacciones)
-    
-    for idx, interaccion in enumerate(interacciones):
-        respuesta_pydantic = cadena.invoke({"texto": interaccion["texto"], "canal": interaccion["canal"]})
-        datos_ia = respuesta_pydantic.model_dump()
-        score = datos_ia["relevancia"]
+    # Procesamiento en Lote (Batch) para paralelizar las peticiones a Gemma 4
+    with st.spinner(f"Enviando {len(interacciones)} mensajes en paralelo a Gemma 4..."):
+        # 1. Preparamos todas las entradas en una lista
+        entradas = [{"texto": i["texto"], "canal": i["canal"]} for i in interacciones]
         
-        resultado_item = {
-            "id": interaccion.get("id", idx),
-            "autor": interaccion["autor"],
-            "canal": interaccion["canal"],
-            "texto_original": interaccion["texto"],
-            "ia": datos_ia, 
-            "score": score
-        }
+        # 2. Ejecutamos todas las consultas al mismo tiempo
+        # max_concurrency limita las peticiones simultáneas para no saturar la API
+        respuestas_lote = cadena.batch(entradas, config={"max_concurrency": 5})
         
-        if score >= 70:
-            st.session_state['resultados_destacados'].append(resultado_item)
-        else:
-            st.session_state['resultados_descartados'].append(resultado_item)
+        # 3. Procesamos los resultados empaquetados
+        for idx, (interaccion, respuesta_pydantic) in enumerate(zip(interacciones, respuestas_lote)):
+            datos_ia = respuesta_pydantic.model_dump()
+            score = datos_ia["relevancia"]
             
-        barra_progreso.progress((idx + 1) / total)
-        
+            resultado_item = {
+                "id": interaccion.get("id", idx),
+                "autor": interaccion["autor"],
+                "canal": interaccion["canal"],
+                "texto_original": interaccion["texto"],
+                "ia": datos_ia, 
+                "score": score
+            }
+            
+            if score >= 70:
+                st.session_state['resultados_destacados'].append(resultado_item)
+            else:
+                st.session_state['resultados_descartados'].append(resultado_item)
+                
     st.session_state['analisis_completado'] = True
     st.success("¡Análisis completado con éxito!")
 
