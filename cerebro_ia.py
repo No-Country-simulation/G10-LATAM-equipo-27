@@ -6,7 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 load_dotenv()
-_modelo = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+_modelo = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 llm = ChatGroq(model=_modelo, temperature=0.1)
 
 class FormatoSalida(BaseModel):
