@@ -21,6 +21,12 @@ SEMANA_INICIO = FECHA_INICIO.isocalendar().week
 
 
 def construir_paquete(mensajes: list) -> dict | None:
+    # channel.history() entrega cada canal del más nuevo al más viejo, y el bot los recorre
+    # canal por canal, así que la lista llega desordenada. Como el id de la base se asigna
+    # en el orden en que se guarda, la ordeno aquí de más viejo a más nuevo (por la fecha
+    # real en que se mandó cada mensaje en Discord) para que el id 1 sea el primero enviado
+    mensajes = sorted(mensajes, key=lambda m: m.created_at)
+
     interacciones = []
     for m in mensajes:
         texto = m.content.strip()
