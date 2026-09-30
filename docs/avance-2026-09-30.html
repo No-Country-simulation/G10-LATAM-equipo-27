@@ -1,0 +1,136 @@
+<title>Discord Extractor: avance</title>
+<style>
+  /* layout: single-column report — status band, pipeline diagram, checklist grid, evidence, footer */
+  :root{
+    --bg:#f6f4ef; --surface:#ffffff; --ink:#1c1b19; --muted:#6b6459;
+    --line:#e4ded2; --accent:#3b6e5e; --accent-soft:#e4efe9; --ok:#2f7a4f;
+    --mono:#8a3b2d;
+    --font-display:'Fraunces',Georgia,serif;
+    --font-body:'Source Sans 3',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15140f; --surface:#1e1c16; --ink:#efe9dc; --muted:#a8a196;
+      --line:#332f26; --accent:#7fc4a8; --accent-soft:#22322b; --ok:#7fd19f;
+      --mono:#e08a6f; color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15140f; --surface:#1e1c16; --ink:#efe9dc; --muted:#a8a196;
+    --line:#332f26; --accent:#7fc4a8; --accent-soft:#22322b; --ok:#7fd19f;
+    --mono:#e08a6f; color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);
+    margin:0;padding-inline:16px;padding-block:32px;line-height:1.5}
+  .page{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent)}
+  h1{font-family:var(--font-display);font-weight:600;font-size:clamp(28px,5vw,40px);
+    margin:6px 0 4px;text-wrap:balance;letter-spacing:-.01em}
+  .subtitle{color:var(--muted);font-size:15px;max-width:56ch}
+
+  .status-band{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:14px 18px}
+  .status-band strong{color:var(--ok);font-weight:700}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+
+  .pipeline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+    font-family:var(--font-mono);font-size:12.5px}
+  .pipe-step{background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:8px 12px;white-space:nowrap}
+  .pipe-arrow{color:var(--muted)}
+
+  h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0 0 12px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;min-width:0}
+  .row span:first-child{min-width:0;overflow-wrap:break-word}
+  .check{flex:none;font-size:13px;font-weight:700;color:var(--ok);
+    background:var(--accent-soft);border-radius:6px;padding:2px 8px}
+
+  .evidence{background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+  .evidence code{font-family:var(--font-mono);font-size:13px;color:var(--mono);
+    background:var(--accent-soft);border-radius:6px;padding:2px 6px;
+    word-break:break-word}
+  .evidence ul{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+  .evidence li{margin-bottom:4px}
+
+  .next ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .next li{display:flex;gap:10px;font-size:14.5px;color:var(--ink);align-items:baseline}
+  .next li::before{content:"→";color:var(--accent);font-weight:700;flex:none}
+
+  footer{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);
+    font-size:12.5px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="page">
+  <header>
+    <div class="eyebrow">CommunityLab · Hackathon ONE G10</div>
+    <h1>Discord Extractor</h1>
+    <p class="subtitle">Servicio de ingesta que lee mensajes reales de Discord y los deja listos, en formato CommunityLab, en OCI Object Storage — sin credenciales expuestas en ningún paso.</p>
+  </header>
+
+  <div class="status-band">
+    <span class="dot" aria-hidden="true"></span>
+    <span><strong>Pipeline funcionando de punta a punta</strong> — probado con datos reales del servidor del equipo.</span>
+  </div>
+
+  <section>
+    <h2>Cómo fluyen los datos</h2>
+    <div class="pipeline">
+      <span class="pipe-step">Discord (bot propio)</span>
+      <span class="pipe-arrow">→</span>
+      <span class="pipe-step">API REST (FastAPI)</span>
+      <span class="pipe-arrow">→</span>
+      <span class="pipe-step">Transformación CommunityLab</span>
+      <span class="pipe-arrow">→</span>
+      <span class="pipe-step">OCI Object Storage</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Estado de cada pieza</h2>
+    <div class="grid">
+      <div class="row"><span>Bot de Discord (propio, separado del de n8n)</span><span class="check">Listo</span></div>
+      <div class="row"><span>API — /health, /channels, /extract</span><span class="check">Listo</span></div>
+      <div class="row"><span>19 tests unitarios</span><span class="check">Listo</span></div>
+      <div class="row"><span>Bucket OCI Object Storage</span><span class="check">Listo</span></div>
+      <div class="row"><span>VM Compute Always Free + Docker</span><span class="check">Listo</span></div>
+      <div class="row"><span>Auth sin credenciales (Instance Principal)</span><span class="check">Listo</span></div>
+    </div>
+  </section>
+
+  <section class="evidence">
+    <h2 style="margin-bottom:0">Prueba real</h2>
+    <p style="margin:0;color:var(--muted);font-size:14.5px"><code>POST /extract</code> sobre el canal <code>#preguntas</code> del servidor real del equipo:</p>
+    <ul>
+      <li>12 mensajes capturados y transformados correctamente</li>
+      <li>Respuesta: <code>almacenamiento_oci.status = "guardado_con_exito"</code></li>
+      <li>Archivo verificado en la consola de OCI: <code>discord/Semana_40/…json</code></li>
+    </ul>
+  </section>
+
+  <section class="next">
+    <h2>Próximos pasos</h2>
+    <ul>
+      <li>Revisión y merge del PR por el equipo</li>
+      <li>Reservar IP pública fija para la VM</li>
+      <li>Coordinar con Eduardo para no duplicar la captura de Discord (n8n vs. este extractor)</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Rama: feature/discord-extractor</span>
+    <span>services/discord_extractor · deploy/oci</span>
+  </footer>
+</div>
