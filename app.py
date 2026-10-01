@@ -42,7 +42,7 @@ if st.button("🚀 Ejecutar Análisis de KPIs"):
         
         # 2. Ejecutamos todas las consultas al mismo tiempo
         # max_concurrency limita las peticiones simultáneas para no saturar la API
-        respuestas_lote = cadena.batch(entradas, config={"max_concurrency": 5})
+        respuestas_lote = cadena.batch(entradas, config={"max_concurrency": 20})
         
         # 3. Procesamos los resultados empaquetados
         for idx, (interaccion, respuesta_pydantic) in enumerate(zip(interacciones, respuestas_lote)):
