@@ -1,0 +1,53 @@
+{
+    "origen_comunidad": "Discord_Bot_Directo",
+    "interacciones": [
+        {
+            "id": 1,
+            "autor": "isseigremory7244",
+            "canal": "general",
+            "texto": "El despliegue de anoche fue un desastre total. La base de datos perdió consistencia y los respaldos están corruptos. Necesitamos hacer un postmortem urgente y cambiar el protocolo de CI/CD porque esto nos está costando usuarios, tiempo y muchísimo dinero."
+        },
+        {
+            "id": 2,
+            "autor": "enoc0009",
+            "canal": "general",
+            "texto": "jajajaja 😅"
+        },
+        {
+            "id": 3,
+            "autor": "isseigremory7244",
+            "canal": "chat-egresados",
+            "texto": "Me parece una pésima decisión corporativa obligar a la comunidad a pagar por el acceso básico a la API. Han roto la confianza de miles de desarrolladores open-source que los apoyaron. Deberían revertir esto inmediatamente o al menos dar un periodo de transición estructurado."
+        },
+        {
+            "id": 4,
+            "autor": "isseigremory7244",
+            "canal": "chat-egresados",
+            "texto": "¡Qué gusto saludar a la comunidad de egresados! ¿En qué proyectos andan trabajando últimamente? Siempre es bueno reconectar."
+        },
+        {
+            "id": 5,
+            "autor": "isseigremory7244",
+            "canal": "oportunidades-laborales",
+            "texto": "Hola a todos, acabo de ver una vacante muy interesante en [empresa/sector] y quise compartirla por aquí. Les dejo el enlace por si alguien está buscando nuevas oportunidades."
+        },
+        {
+            "id": 6,
+            "autor": "sarg.67",
+            "canal": "oportunidades-laborales",
+            "texto": "hoy tuve mi entrevista en una empresa trasnacional, pasé a la siguiente etapa!"
+        },
+        {
+            "id": 7,
+            "autor": "isseigremory7244",
+            "canal": "preguntas",
+            "texto": "Adjunto el análisis comparativo de rendimiento entre Llama 3.1 y 3.3. Llama 3.3 consume un 40% más de RAM, pero reduce las alucinaciones en un 15%. Dejo el benchmark en el hilo para que el equipo evalúe la viabilidad de la migración."
+        },
+        {
+            "id": 8,
+            "autor": "isseigremory7244",
+            "canal": "preguntas",
+            "texto": "Cuando es el otro mundial?"
+        }
+    ]
+}
