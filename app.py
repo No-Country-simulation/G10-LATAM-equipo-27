@@ -18,8 +18,8 @@ col1, col2 = st.columns([1, 2])
 
 with col1:
     if st.button("📥 Extraer últimos mensajes de Discord", use_container_width=True):
-        if not os.environ.get("DISCORD_BOT_TOKEN"):
-            st.error("⚠️ Falta el DISCORD_BOT_TOKEN en el archivo .env")
+        if not os.environ.get("DISCORD_TOKEN"):
+            st.error("⚠️ Falta el DISCORD_TOKEN en el archivo .env")
         else:
             with st.spinner("Conectando con Discord y descargando mensajes..."):
                 # Usamos subprocess para evitar choques con el event loop de asyncio de Streamlit

@@ -3,8 +3,6 @@ langchain-groq
 langchain-core
 langchain-google-genai
 pydantic
-jupyter
 python-dotenv
 streamlit
 discord.py
-nest-asyncio

@@ -3,22 +3,20 @@ Se conecta con el bot, trae los últimos mensajes de los 4 canales y llama direc
 procesar_actividad (ya no hay POST ni endpoint: todo corre en el mismo proceso).
 """
 import discord
-import nest_asyncio
 
 from armar_json_bot_python import CANALES, construir_paquete
 from base_datos import crear_tabla
 from procesamiento import procesar_actividad
 
-# resuelve el choque entre discord.py y el bucle de eventos que Colab ya tiene
-# corriendo de fondo (sin esto, cliente.run(TOKEN) revienta con RuntimeError)
-nest_asyncio.apply()
+# En local (fuera de Colab) no necesitamos nest_asyncio, de hecho rompe aiohttp.
+
 
 # el token vive en Colab Secrets (icono de llave), no en un .env como en la PC.
-# primero: crear un secreto llamado DISCORD_BOT_TOKEN y activar "Notebook access"
+# primero: crear un secreto llamado DISCORD_TOKEN y activar "Notebook access"
 import os
 from dotenv import load_dotenv
 load_dotenv()
-TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
+TOKEN = os.environ.get('DISCORD_TOKEN')
 
 LIMITE_POR_CANAL = 20
 
@@ -59,6 +57,6 @@ async def on_ready():
 
 if __name__ == "__main__":
     if not TOKEN:
-        raise SystemExit("Falta DISCORD_BOT_TOKEN en el .env")
+        raise SystemExit("Falta DISCORD_TOKEN en el .env")
     crear_tabla()
     cliente.run(TOKEN)

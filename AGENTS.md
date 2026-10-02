@@ -28,6 +28,7 @@ Proyecto en Python para evaluar, mediante inteligencia artificial (Groq/Gemini),
 - Haz solo lo que se pide: no añadas funcionalidades por tu cuenta.
 - Cambios pequeños y enfocados; no reescribas lo que ya funciona.
 - Al terminar, resume qué has cambiado y cualquier decisión que deba revisar.
+- **Gestión de dependencias**: Siempre que agregues o elimines el uso de alguna librería, actualiza INMEDIATAMENTE el archivo `requirements.txt` para que solo contenga los paquetes estrictamente necesarios.
 
 ## Memoria
 - Al empezar, lee `MEMORY.md` para conocer el estado del proyecto y las decisiones tomadas.
