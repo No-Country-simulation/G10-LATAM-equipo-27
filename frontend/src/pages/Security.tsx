@@ -119,7 +119,7 @@ const [creatingUser, setCreatingUser] = useState(false);
   ) => {
     const confirmed = window.confirm(
       isActive
-        ? "¿Estás seguro de que deseas activar este usuario? Podrá volver a iniciar sesión en CloudedTech."
+        ? "¿Estás seguro de que deseas activar este usuario? Podrá volver a iniciar sesión en CloudEdTech."
         : "¿Estás seguro de que deseas desactivar este usuario? No podrá iniciar sesión mientras su cuenta esté inactiva."
     );
 
@@ -251,7 +251,7 @@ const [creatingUser, setCreatingUser] = useState(false);
   }
 
   const confirmed = window.confirm(
-    `¿Estás seguro de que deseas restablecer la contraseña de ${username}?`
+    `¿Estás seguro de que deseas restablecer la contraseñade ${username}?`
   );
 
   if (!confirmed) {
@@ -336,7 +336,7 @@ const handleDeleteUser = async (
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Control de acceso y permisos de CloudedTech
+            Control de acceso y permisos de CloudEdTech
           </p>
         </div>
       </div>
@@ -583,7 +583,7 @@ const handleDeleteUser = async (
                 </td>
 
                 <td className="px-4 py-4 text-slate-300">
-                  —
+                —
                 </td>
               </tr>
 

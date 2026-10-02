@@ -60,7 +60,7 @@ function Export() {
                             </h4>
 
                             <p className="mt-1 text-sm text-slate-500">
-                                Exporta los datos actuales de CloudedTech en formato JSON.
+                                Exporta los datos actuales de CloudEdTech en formato JSON.
                             </p>
                         </div>
 

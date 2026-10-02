@@ -46,7 +46,7 @@ function Settings() {
             </h1>
 
             <p className="mt-1 text-sm text-slate-500">
-              Configura CloudedTech, la inteligencia artificial y las
+              Configura CloudEdTech, la inteligencia artificial y las
               integraciones de la comunidad
             </p>
           </div>
@@ -112,7 +112,7 @@ function Settings() {
 
               <input
                 type="text"
-                defaultValue="CloudedTech"
+                defaultValue="CloudEdTech"
                 className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
               />
             </div>
@@ -337,7 +337,7 @@ function Settings() {
 
               <input
                 type="text"
-                defaultValue="CloudedTech"
+                defaultValue="CloudEdTech"
                 className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
               />
             </div>
@@ -514,7 +514,7 @@ function Settings() {
             </h2>
 
             <p className="text-xs text-slate-400">
-              Alertas importantes de CloudedTech
+              Alertas importantes de CloudEdTech
             </p>
           </div>
         </div>

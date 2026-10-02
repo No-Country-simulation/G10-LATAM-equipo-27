@@ -151,7 +151,7 @@ function Approvals() {
                                     </div>
 
                                     <p className="mt-1 text-xs text-slate-400">
-                                        Canal: #{item.channel} · Generado por CloudedTech
+                                        Canal: #{item.channel} · Generado por CloudEdTech
                                     </p>
                                 </div>
                             </div>

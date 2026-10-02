@@ -150,7 +150,7 @@ export default function Login() {
 
                     <div className="mt-8 border-t border-slate-800 pt-5 text-center">
                         <p className="text-xs text-slate-500">
-                            Acceso restringido · CloudedTech
+                            Acceso restringido · CloudEdTech
                         </p>
                     </div>
 

@@ -39,7 +39,7 @@ function OCIStorage() {
                 </h2>
 
                 <p className="mt-1 text-slate-500">
-                    Gestiona el envío de información de CloudedTech a Oracle Cloud.
+                    Gestiona el enví­o de información de CloudEdTech a Oracle Cloud.
                 </p>
             </div>
 
@@ -56,7 +56,7 @@ function OCIStorage() {
                         </h3>
 
                         <p className="text-sm text-slate-500">
-                            Envía a OCI Object Storage la información recopilada durante la semana.
+                            Enví­a a OCI Object Storage la información recopilada durante la semana.
                         </p>
                     </div>
                 </div>
