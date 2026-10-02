@@ -85,8 +85,27 @@ def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje
         conexion.close()
 
 
-def listar_interacciones(canal=None, estado=None, limite=100) -> list:
-    """Regresa las interacciones guardadas como lista de diccionarios (las más recientes primero)."""
+def _corte_utc(corte) -> str:
+    """
+    Convierte un corte de fecha (texto ISO o datetime) al formato exacto en que se guarda
+    enviado_en. Es necesario porque el filtro compara las fechas como texto: si el corte
+    llegara en otro formato (por ejemplo con otra zona horaria), compararía mal y sin avisar.
+    Una fecha sin zona horaria se toma como UTC. Si el texto no es una fecha, lanza ValueError.
+    """
+    if isinstance(corte, str):
+        corte = datetime.fromisoformat(corte)
+    return a_utc_iso(corte)
+
+
+def listar_interacciones(canal=None, estado=None, limite=100, desde_utc=None, hasta_utc=None) -> list:
+    """
+    Regresa las interacciones guardadas como lista de diccionarios (las más recientes primero).
+
+    desde_utc y hasta_utc filtran por enviado_en, la fecha real de envío en Discord:
+    desde_utc SÍ incluye ese instante y hasta_utc NO lo incluye, así dos periodos seguidos
+    no repiten ni se saltan mensajes. Con limite=None no hay tope de mensajes. Los mensajes
+    sin fecha (paquetes armados a mano) no aparecen cuando se filtra por fechas.
+    """
     conexion = sqlite3.connect(RUTA_BD)
     # row_factory hace que cada fila se pueda convertir a diccionario con sus nombres de columna
     conexion.row_factory = sqlite3.Row
@@ -104,10 +123,18 @@ def listar_interacciones(canal=None, estado=None, limite=100) -> list:
         if estado:
             condiciones.append("estado = ?")
             parametros.append(estado)
+        if desde_utc:
+            condiciones.append("enviado_en >= ?")
+            parametros.append(_corte_utc(desde_utc))
+        if hasta_utc:
+            condiciones.append("enviado_en < ?")
+            parametros.append(_corte_utc(hasta_utc))
         if condiciones:
             consulta += " WHERE " + " AND ".join(condiciones)
-        consulta += " ORDER BY id DESC LIMIT ?"
-        parametros.append(limite)
+        consulta += " ORDER BY id DESC"
+        if limite is not None:
+            consulta += " LIMIT ?"
+            parametros.append(limite)
 
         filas = conexion.execute(consulta, parametros).fetchall()
         return [dict(fila) for fila in filas]
