@@ -15,7 +15,11 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
-LIMITE_POR_CANAL = 20
+# None = leer todo el historial de cada canal. Con un límite (por ejemplo 20) se pierden los
+# mensajes más viejos si un canal recibe más mensajes nuevos que ese número entre una corrida
+# y la siguiente, y tampoco serviría para reconstruir la base desde Discord. Es seguro dejarlo
+# sin límite porque procesar_actividad descarta lo que ya está guardado
+LIMITE_POR_CANAL = None
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -35,8 +39,12 @@ async def on_ready():
             print(f"No encontré el canal con ID {canal_id} (¿el bot está en el servidor correcto?)")
             continue
 
+        leidos = 0
         async for mensaje in canal.history(limit=LIMITE_POR_CANAL):
             mensajes_totales.append(mensaje)
+            leidos += 1
+        # así se ve cuántos mensajes leyó de cada canal (útil para saber si algo no llegó)
+        print(f"{canal.name}: {leidos} mensajes leídos")
 
     paquete = construir_paquete(mensajes_totales)
 
