@@ -49,16 +49,26 @@ export default function Login() {
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
 
                     {/* Identidad */}
-                    <div className="text-center mb-8">
-                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-white text-2xl font-bold shadow-lg">
-                            C
+                    <div className="text-center mb-6">
+                        <div className="mx-auto mb-2 flex h-24 w-28 items-center justify-center">
+                            <img
+                                src="/brand/cloudedtech-icon.svg"
+                                alt="CloudEdTech"
+                                className="h-full w-full object-contain"
+                            />
                         </div>
 
-                        <h1 className="text-3xl font-bold text-white">
-                            Clouded<span className="text-orange-500">Tech</span>
+                        <h1 className="text-3xl font-bold tracking-tight">
+                            <span className="text-white">Cloud</span>
+                            <span className="text-[#FF7400]">Ed</span>
+                            <span className="text-white">Tech</span>
                         </h1>
 
-                        <p className="mt-2 text-sm text-slate-400">
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">
+                            Education &amp; Technology
+                        </p>
+
+                        <p className="mt-3 text-sm text-slate-400">
                             Inteligencia para comunidades digitales
                         </p>
                     </div>
@@ -132,7 +142,7 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={loading || !username.trim() || !password}
-                            className="w-full rounded-xl bg-orange-500 px-4 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full rounded-xl bg-[#FF7400] px-4 py-3 font-semibold text-white transition hover:bg-[#E96800] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {loading ? "Ingresando..." : "Iniciar sesión"}
                         </button>

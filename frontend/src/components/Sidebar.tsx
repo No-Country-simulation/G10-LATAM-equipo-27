@@ -68,19 +68,26 @@ function Sidebar() {
     return (
         <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col bg-slate-950 text-white">
 
-            {/* Logo */}
-            <div className="flex h-20 items-center border-b border-slate-800 px-6">
-                <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500">
-                    <WandSparkles size={22} />
+            
+            {/* Identidad CloudEdTech */}
+            <div className="flex h-20 items-center border-b border-slate-800 px-5">
+                <div className="mr-2 flex h-12 w-14 shrink-0 items-center justify-center">
+                    <img
+                        src="/brand/cloudedtech-icon.svg"
+                        alt="CloudEdTech"
+                        className="h-full w-full object-contain"
+                    />
                 </div>
 
-                <div>
-                    <h1 className="text-lg font-bold">
-                        Clouded<span className="text-orange-500">Tech</span>
+                <div className="min-w-0">
+                    <h1 className="text-lg font-bold tracking-tight leading-none">
+                        <span className="text-white">Cloud</span>
+                        <span className="text-[#FF7400]">Ed</span>
+                        <span className="text-white">Tech</span>
                     </h1>
 
-                    <p className="text-xs text-slate-400">
-                        Intelligent Community Engine
+                    <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        Education &amp; Technology
                     </p>
                 </div>
             </div>
