@@ -1,10 +1,14 @@
+import os
 import sqlite3
 from datetime import datetime, timezone
 
 from periodos import a_utc_iso
 
-# el archivo de la base se crea solo en la carpeta del proyecto (lo agregué al .gitignore como *.db)
-RUTA_BD = "communitylab.db"
+# la base se crea junto a este archivo (lo agregué al .gitignore como *.db). Así queda en el
+# mismo lugar en la PC y en Colab, donde el código vive en Drive y por eso la base también
+# sobrevive si Colab se desconecta. Antes era un nombre suelto que dependía de desde qué
+# carpeta se corriera el programa
+RUTA_BD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "communitylab.db")
 
 
 def crear_tabla() -> None:

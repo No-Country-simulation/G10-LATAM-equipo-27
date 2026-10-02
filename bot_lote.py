@@ -5,15 +5,30 @@ procesar_actividad (ya no hay POST ni endpoint: todo corre en el mismo proceso).
 import os
 
 import discord
-from dotenv import load_dotenv
 
 from armar_json_bot_python import CANALES, construir_paquete
 from base_datos import crear_tabla
 from procesamiento import procesar_actividad
 
-load_dotenv()
+# el token se lee distinto según dónde corra el código, y así este mismo archivo sirve en los dos:
+# - en Colab no hay .env: el token vive en Secrets (icono de llave), con un secreto llamado
+#   DISCORD_BOT_TOKEN y "Notebook access" activado. Además Colab ya tiene su propio bucle de
+#   eventos y choca con discord.py: nest_asyncio.apply() lo resuelve (sin eso, cliente.run
+#   revienta con "RuntimeError: This event loop is already running")
+# - en la PC: el token está en el archivo .env
+try:
+    from google.colab import userdata  # este módulo solo existe en Colab
+except ImportError:
+    from dotenv import load_dotenv
 
-TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+    # el .env se busca junto a este archivo, no en la carpeta desde la que se corra el programa
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+    TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+else:
+    import nest_asyncio
+
+    nest_asyncio.apply()
+    TOKEN = userdata.get("DISCORD_BOT_TOKEN")
 
 # None = leer todo el historial de cada canal. Con un límite (por ejemplo 20) se pierden los
 # mensajes más viejos si un canal recibe más mensajes nuevos que ese número entre una corrida
@@ -62,6 +77,6 @@ async def on_ready():
 
 if __name__ == "__main__":
     if not TOKEN:
-        raise SystemExit("Falta DISCORD_BOT_TOKEN en el .env")
+        raise SystemExit("Falta DISCORD_BOT_TOKEN (en el .env, o en Secrets si es Colab)")
     crear_tabla()
     cliente.run(TOKEN)
