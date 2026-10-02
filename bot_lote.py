@@ -15,8 +15,10 @@ nest_asyncio.apply()
 
 # el token vive en Colab Secrets (icono de llave), no en un .env como en la PC.
 # primero: crear un secreto llamado DISCORD_BOT_TOKEN y activar "Notebook access"
-from google.colab import userdata
-TOKEN = userdata.get('DISCORD_BOT_TOKEN')
+import os
+from dotenv import load_dotenv
+load_dotenv()
+TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 
 LIMITE_POR_CANAL = 20
 

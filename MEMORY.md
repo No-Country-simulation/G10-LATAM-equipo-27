@@ -2,18 +2,14 @@
 Memoria del proyecto entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte.
 
 ## Estado actual
-- El código se ha unificado a partir de los aportes de varios colaboradores en un Google Colab (`Codigo_con_imports.ipynb`). 
-- El flujo ya es funcional en Colab, pero se requiere adaptar el código para su correcta ejecución en un entorno local (Windows/Python) antes de subirlo a la rama principal de GitHub.
+- El proyecto se ha transformado en una aplicación web interactiva con **Streamlit (`app.py`)** para unificar el flujo de trabajo entre los equipos de frontend y copywriting.
+- La extracción de Discord (`bot_lote.py`) ya no depende de Google Colab y se integra directamente al panel de control ejecutándose mediante subprocess para evitar choques con el event loop asíncrono.
+- La ejecución del cerebro ahora es dinámica a través de un selector visual en la interfaz.
 
 ## Decisiones (y por qué)
-- Se mantiene la estructura modular (varios `.py` importados en el flujo principal) para favorecer la legibilidad y mantenimiento del código unificado.
-- Se ha de priorizar la eliminación de dependencias exclusivas de Colab (como `google.colab.userdata`) por soluciones estándar de Python (como `python-dotenv`) para asegurar la portabilidad local y seguridad de las API keys.
-
-## Aprendizajes y errores a evitar
-- (vacío por ahora)
+- Se desarrolló un panel de Streamlit para proveer una UI funcional e inmediata, permitiendo al equipo consumir JSONs (frontend) y validar los copies generados (copywriter) sin lidiar con Jupyter Notebooks.
+- `bot_lote.py` se ejecuta mediante `subprocess.run` desde Streamlit para aislar su loop de eventos (`asyncio`) propio del de la aplicación principal.
 
 ## Próximos pasos
-- [x] Crear un archivo `requirements.txt` con las dependencias del proyecto.
-- [x] Adaptar `Codigo_con_imports.ipynb` (o crear un script principal en Python) para que use `os.environ.get()` en lugar de `userdata.get()`.
-- [x] Configurar un archivo `.env` (y su plantilla `.env.example`) para el manejo seguro de variables de entorno en local.
-- [ ] Preparar el repositorio local para enviarlo a GitHub (Ejecutar `git init`, `git add .`, etc.).
+- [ ] Validar con el equipo de Frontend si el formato JSON consumido vía Streamlit es suficiente o si se requiere levantar un servidor FastAPI en el futuro.
+- [ ] Validar con el Copywriter la visualización en columnas para la aprobación/descarte de mensajes.

@@ -11,9 +11,9 @@ Proyecto en Python para evaluar, mediante inteligencia artificial (Groq/Gemini),
 - `ver_json.py`: Carga y lectura de datos fuente.
 
 ## Comandos
-- **Instalación de dependencias**: `pip install langchain-groq langchain-core pydantic langchain-google-genai jupyter python-dotenv` (o instalar desde un futuro requirements.txt).
+- **Instalación de dependencias**: `pip install -r requirements.txt`
 - **Ejecución local**: 
-  - Levantar Jupyter: `jupyter notebook` y ejecutar `Codigo_con_imports.ipynb` o bien convertirlo a script `.py`.
+  - Levantar la interfaz de Streamlit: `streamlit run app.py`
 
 ## Convenciones
 - Nomenclatura en español para variables y funciones (`resultados_destacados`, `paquete_maestro`, etc.).
