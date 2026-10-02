@@ -1,5 +1,7 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
+
+from periodos import a_utc_iso
 
 # el archivo de la base se crea solo en la carpeta del proyecto (lo agregué al .gitignore como *.db)
 RUTA_BD = "communitylab.db"
@@ -21,17 +23,29 @@ def crear_tabla() -> None:
                 canal TEXT NOT NULL,
                 tipo TEXT,
                 texto TEXT NOT NULL,
+                enviado_en TEXT,
                 estado TEXT NOT NULL DEFAULT 'pendiente',
                 creado_en TEXT NOT NULL
             )
             """
         )
+
+        # CREATE TABLE IF NOT EXISTS no agrega columnas a una tabla que ya existía. Si la base
+        # es anterior a enviado_en, prefiero avisar claro y ahora, en vez de que falle después
+        # con un error confuso al guardar (o, peor, que guarde sin la fecha)
+        columnas = [f[1] for f in conexion.execute("PRAGMA table_info(interacciones)").fetchall()]
+        if "enviado_en" not in columnas:
+            raise RuntimeError(
+                "La tabla 'interacciones' es de una versión anterior y no tiene la columna "
+                "'enviado_en'. Respalda y borra communitylab.db, y vuelve a correr el bot para "
+                "reconstruirla desde Discord."
+            )
         conexion.commit()
     finally:
         conexion.close()
 
 
-def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje) -> bool:
+def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje, enviado_en=None) -> bool:
     """Guarda un mensaje. Regresa True si era nuevo y False si ya existía (repetido)."""
     conexion = sqlite3.connect(RUTA_BD)
     try:
@@ -48,8 +62,8 @@ def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje
         conexion.execute(
             """
             INSERT INTO interacciones
-            (hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, creado_en)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, enviado_en, creado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 hash_mensaje,
@@ -59,7 +73,10 @@ def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje
                 canal,
                 tipo,
                 texto,
-                datetime.now().isoformat(timespec="seconds"),
+                enviado_en,
+                # cuándo lo guardó el bot (la "llamada"). En UTC y con el mismo formato que
+                # enviado_en, para que no dependa del reloj de la máquina donde corra (PC o Colab)
+                a_utc_iso(datetime.now(timezone.utc)),
             ),
         )
         conexion.commit()
@@ -76,7 +93,7 @@ def listar_interacciones(canal=None, estado=None, limite=100) -> list:
     try:
         # no incluyo el hash porque es un dato interno que a mis compañeros no les sirve
         consulta = (
-            "SELECT id, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, estado, creado_en "
+            "SELECT id, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, enviado_en, estado, creado_en "
             "FROM interacciones"
         )
         condiciones = []

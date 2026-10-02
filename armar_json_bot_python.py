@@ -4,7 +4,7 @@ bot en Python lo mande directo a procesar_actividad (ya no hay endpoint al que
 mandarlo por POST). La limpieza del texto y la detección de repetidos siguen siendo
 trabajo de procesamiento.py y base_datos.py; el bot solo arma el paquete.
 """
-from datetime import date
+from periodos import a_utc_iso, semana_de
 
 CANALES = {
     "1550016804418621452": "#general",
@@ -15,9 +15,8 @@ CANALES = {
 
 ORIGEN_COMUNIDAD = "Discord_Grupo_ONE_G10"
 
-# fecha en la que arrancó el servidor de Discord; el periodo se cuenta desde aquí
-FECHA_INICIO = date(2026, 9, 20)
-SEMANA_INICIO = FECHA_INICIO.isocalendar().week
+# la fecha de inicio del proyecto (y cómo se cuentan las semanas) ya no vive aquí:
+# está en periodos.py, para que solo haya un lugar donde cambiarla
 
 
 def construir_paquete(mensajes: list) -> dict | None:
@@ -36,17 +35,19 @@ def construir_paquete(mensajes: list) -> dict | None:
             "autor": str(m.author),
             "canal": CANALES.get(str(m.channel.id), f"#{m.channel.id}"),
             "texto": texto,
+            # fecha real en que se mandó el mensaje en Discord (no cuándo lo guardé yo),
+            # es lo que después permite filtrar los mensajes por periodo
+            "enviado_en": a_utc_iso(m.created_at),
         })
 
     if not interacciones:
         return None
 
+    # periodo_referencia sigue siendo por lote: la semana del mensaje más reciente de esta corrida
     fecha_reciente = max(m.created_at for m in mensajes)
-    semana_del_anio = fecha_reciente.date().isocalendar().week
-    semana = semana_del_anio - SEMANA_INICIO + 1
 
     return {
         "origen_comunidad": ORIGEN_COMUNIDAD,
-        "periodo_referencia": f"Semana_{semana:02d}",
+        "periodo_referencia": f"Semana_{semana_de(fecha_reciente):02d}",
         "interacciones": interacciones,
     }

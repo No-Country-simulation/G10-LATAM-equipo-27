@@ -41,6 +41,7 @@ def renumerar_ids() -> None:
                 canal TEXT NOT NULL,
                 tipo TEXT,
                 texto TEXT NOT NULL,
+                enviado_en TEXT,
                 estado TEXT NOT NULL DEFAULT 'pendiente',
                 creado_en TEXT NOT NULL
             )
@@ -49,8 +50,8 @@ def renumerar_ids() -> None:
         conexion.execute(
             """
             INSERT INTO interacciones
-            (hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, estado, creado_en)
-            SELECT hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, estado, creado_en
+            (hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, enviado_en, estado, creado_en)
+            SELECT hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, enviado_en, estado, creado_en
             FROM interacciones_old ORDER BY id
             """
         )

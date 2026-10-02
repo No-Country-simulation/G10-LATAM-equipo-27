@@ -3,13 +3,17 @@ from pydantic import BaseModel, Field
 
 
 # Aquí defino la "forma" exacta que debe tener cada mensaje que llegue.
-# Si falta un campo o viene vacío, FastAPI rechaza el paquete solo con un error 422.
+# Antes esto lo revisaba FastAPI solo; ahora lo reviso yo a mano, llamando a
+# SolicitudActividad(**paquete) y capturando el error si algo no cuadra.
 class Interaccion(BaseModel):
     autor: str = Field(min_length=1)
     canal: str = Field(min_length=1)
     # dejé "tipo" opcional porque Discord no lo trae y lo va a decidir la IA más adelante
     tipo: Optional[str] = None
     texto: str = Field(min_length=1)
+    # fecha real de envío en Discord (UTC). La dejé opcional para que un paquete armado
+    # a mano, sin fechas (como los JSON de ejemplo de las instrucciones), siga siendo válido
+    enviado_en: Optional[str] = None
 
 
 # Esta es la forma del paquete completo, igual al JSON de entrada de las instrucciones
