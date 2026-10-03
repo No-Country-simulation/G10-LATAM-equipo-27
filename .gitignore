@@ -1,0 +1,25 @@
+# Entornos virtuales
+venv/
+env/
+.env
+.venv/
+
+# Archivos de caché y compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Variables de entorno
+.env
+
+# Archivos de Jupyter
+.ipynb_checkpoints/
+
+# Base de datos local
+# (Descomenta la siguiente línea si no quieres subir la DB a GitHub)
+# communitylab.db 
+
+# Salidas generadas
+# (Descomenta la siguiente línea si no quieres subir el JSON de resultados)
+# resultados_kpis.json

@@ -1,0 +1,58 @@
+{
+  "aprobados": [
+    {
+      "id_mensaje": 48,
+      "autor": "editionab",
+      "canal_origen": "#general",
+      "texto_original": "La plataforma de CloudedTech está excelente y responde muy rápido.",
+      "kpis": {
+        "relevancia": 70,
+        "sentimiento": "Positivo",
+        "temas_clave": "#CloudedTech #Performance #UserExperience",
+        "segmento": "Usuarios de la plataforma",
+        "razonamiento": "El mensaje proporciona feedback positivo y específico sobre el rendimiento y la velocidad de la plataforma."
+      }
+    },
+    {
+      "id_mensaje": 47,
+      "autor": "editionab",
+      "canal_origen": "#general",
+      "texto_original": "La nueva plataforma de CloudedTech funciona excelente y responde muy rápido.",
+      "kpis": {
+        "relevancia": 75,
+        "sentimiento": "Positivo",
+        "temas_clave": "#CloudedTech #Performance #UserExperience",
+        "segmento": "Usuarios de la plataforma",
+        "razonamiento": "El mensaje proporciona feedback positivo y específico sobre el rendimiento y la velocidad de la plataforma."
+      }
+    }
+  ],
+  "descartados": [
+    {
+      "id_mensaje": 50,
+      "autor": "isseigremory7244",
+      "canal_origen": "#preguntas",
+      "texto_original": "Hola a todos, como se consigue trabajo rapido?",
+      "kpis": {
+        "relevancia": 30,
+        "sentimiento": "Neutral",
+        "temas_clave": "#empleo #busqueda_laboral #junior",
+        "segmento": "Desarrolladores principiantes",
+        "razonamiento": "El mensaje es una consulta general y superficial que no aporta valor técnico ni profundidad al debate."
+      }
+    },
+    {
+      "id_mensaje": 49,
+      "autor": "isseigremory7244",
+      "canal_origen": "#general",
+      "texto_original": "Hola, que tal?",
+      "kpis": {
+        "relevancia": 10,
+        "sentimiento": "Neutral",
+        "temas_clave": "N/A",
+        "segmento": "N/A",
+        "razonamiento": "El mensaje es un saludo simple sin contenido técnico ni valor agregado para la comunidad."
+      }
+    }
+  ]
+}
