@@ -22,8 +22,9 @@ with col1:
             st.error("⚠️ Falta el DISCORD_TOKEN en el archivo .env")
         else:
             with st.spinner("Conectando con Discord y descargando mensajes..."):
-                # Usamos subprocess para evitar choques con el event loop de asyncio de Streamlit
-                result = subprocess.run(["python", "bot_lote.py"], capture_output=True, text=True)
+                # Usamos subprocess con sys.executable para que Streamlit Cloud use el entorno correcto
+                import sys
+                result = subprocess.run([sys.executable, "bot_lote.py"], capture_output=True, text=True)
                 if result.returncode == 0:
                     st.success("✅ Extracción completada.")
                     with st.expander("Ver logs del bot"):
