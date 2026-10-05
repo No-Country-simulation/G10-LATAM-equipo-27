@@ -36,6 +36,14 @@ def construir_paquete(mensajes: list) -> dict | None:
             "autor": str(m.author),
             "canal": CANALES.get(str(m.channel.id), f"#{m.channel.id}"),
             "texto": texto,
+
+            # Metadatos originales de Discord
+            "guild_id": str(m.guild.id),
+            "guild_name": m.guild.name,
+            "channel_id": str(m.channel.id),
+            "message_id": str(m.id),
+            "author_id": str(m.author.id),
+            "created_at": m.created_at,
         })
 
     if not interacciones:

@@ -1,21 +1,27 @@
+from datetime import datetime
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
-# Aquí defino la "forma" exacta que debe tener cada mensaje que llegue.
-# Antes esto lo revisaba FastAPI solo; ahora lo reviso yo a mano, llamando a
-# SolicitudActividad(**paquete) y capturando el error si algo no cuadra.
 class Interaccion(BaseModel):
+    # Campos originales del motor
     autor: str = Field(min_length=1)
     canal: str = Field(min_length=1)
-    # dejé "tipo" opcional porque Discord no lo trae y lo va a decidir la IA más adelante
     tipo: Optional[str] = None
     texto: str = Field(min_length=1)
 
+    # Metadatos originales de Discord.
+    # Son opcionales para mantener compatibilidad con datos históricos.
+    guild_id: Optional[str] = None
+    guild_name: Optional[str] = None
+    channel_id: Optional[str] = None
+    message_id: Optional[str] = None
+    author_id: Optional[str] = None
+    created_at: Optional[datetime] = None
 
-# Esta es la forma del paquete completo, igual al JSON de entrada de las instrucciones
+
 class SolicitudActividad(BaseModel):
     origen_comunidad: str = Field(min_length=1)
     periodo_referencia: str = Field(min_length=1)
-    # exijo al menos una interacción para no procesar paquetes vacíos
     interacciones: List[Interaccion] = Field(min_length=1)

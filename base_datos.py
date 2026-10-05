@@ -29,30 +29,93 @@ def crear_tabla() -> None:
             )
             """
         )
+                # Migración compatible con bases existentes.
+        # SQLite no agrega columnas nuevas mediante CREATE TABLE IF NOT EXISTS,
+        # por eso comprobamos cuáles faltan y las añadimos individualmente.
+        columnas_existentes = {
+            fila[1]
+            for fila in conexion.execute(
+                "PRAGMA table_info(interacciones)"
+            ).fetchall()
+        }
+
+        nuevas_columnas = {
+    # Metadatos originales de Discord
+    "guild_id": "TEXT",
+    "guild_name": "TEXT",
+    "channel_id": "TEXT",
+    "message_id": "TEXT",
+    "author_id": "TEXT",
+    "created_at": "TEXT",
+
+    # Resultado del motor de IA
+    # AI results
+"relevancia": "INTEGER",
+"sentimiento": "TEXT",
+"sentiment_score": "REAL",
+"temas_clave": "TEXT",
+"segmento": "TEXT",
+"razonamiento": "TEXT",
+}
+
+        for nombre, tipo_sql in nuevas_columnas.items():
+            if nombre not in columnas_existentes:
+                conexion.execute(
+                    f"ALTER TABLE interacciones ADD COLUMN {nombre} {tipo_sql}"
+                )
+
+
         conexion.commit()
     finally:
         conexion.close()
 
 
-def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje) -> bool:
-    """Guarda un mensaje. Regresa True si era nuevo y False si ya existía (repetido)."""
+def guardar_interaccion(
+    origen,
+    periodo,
+    autor,
+    canal,
+    tipo,
+    texto,
+    hash_mensaje,
+    guild_id=None,
+    guild_name=None,
+    channel_id=None,
+    message_id=None,
+    author_id=None,
+    created_at=None,
+) -> bool:
+    """Guarda un mensaje. Regresa True si era nuevo y False si ya existía."""
     conexion = sqlite3.connect(RUTA_BD)
+
     try:
-        # antes usaba INSERT OR IGNORE directo, pero eso gasta un id de AUTOINCREMENT
-        # incluso cuando el mensaje ya existía (el contador de SQLite avanza aunque el
-        # insert se descarte). Por eso primero pregunto si el hash ya existe, y solo
-        # si no existe hago el INSERT: así el id solo sube con mensajes de verdad nuevos
         existe = conexion.execute(
-            "SELECT 1 FROM interacciones WHERE hash = ?", (hash_mensaje,)
+            "SELECT 1 FROM interacciones WHERE hash = ?",
+            (hash_mensaje,),
         ).fetchone()
+
         if existe:
             return False
 
         conexion.execute(
             """
-            INSERT INTO interacciones
-            (hash, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, creado_en)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO interacciones (
+                hash,
+                origen_comunidad,
+                periodo_referencia,
+                autor,
+                canal,
+                tipo,
+                texto,
+                creado_en,
+                guild_id,
+                guild_name,
+                channel_id,
+                message_id,
+                author_id,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 hash_mensaje,
@@ -63,10 +126,60 @@ def guardar_interaccion(origen, periodo, autor, canal, tipo, texto, hash_mensaje
                 tipo,
                 texto,
                 datetime.now().isoformat(timespec="seconds"),
+                guild_id,
+                guild_name,
+                channel_id,
+                message_id,
+                author_id,
+                created_at.isoformat() if created_at else None,
             ),
         )
+
         conexion.commit()
         return True
+
+    finally:
+        conexion.close()
+
+def guardar_analisis(
+    id_mensaje,
+    relevancia,
+    sentimiento,
+    sentiment_score,
+    temas_clave,
+    segmento,
+    razonamiento,
+) -> bool:
+    """Guarda el resultado del análisis de IA en una interacción existente."""
+    conexion = sqlite3.connect(RUTA_BD)
+
+    try:
+        cursor = conexion.execute(
+            """
+            UPDATE interacciones
+            SET relevancia = ?,
+                sentimiento = ?,
+                sentiment_score = ?,
+                temas_clave = ?,
+                segmento = ?,
+                razonamiento = ?,
+                estado = 'analizado'
+            WHERE id = ?
+            """,
+            (
+                relevancia,
+                sentimiento,
+                sentiment_score,
+                temas_clave,
+                segmento,
+                razonamiento,
+                id_mensaje,
+            ),
+        )
+
+        conexion.commit()
+        return cursor.rowcount > 0
+
     finally:
         conexion.close()
 
@@ -79,9 +192,13 @@ def listar_interacciones(canal=None, estado=None, limite=100) -> list:
     try:
         # no incluyo el hash porque es un dato interno que a mis compañeros no les sirve
         consulta = (
-            "SELECT id, origen_comunidad, periodo_referencia, autor, canal, tipo, texto, estado, creado_en "
-            "FROM interacciones"
-        )
+    "SELECT "
+    "id, origen_comunidad, periodo_referencia, "
+    "autor, canal, tipo, texto, estado, creado_en, "
+    "guild_id, guild_name, channel_id, message_id, author_id, created_at, "
+    "relevancia, sentimiento, sentiment_score, temas_clave, segmento, razonamiento "
+    "FROM interacciones"
+)
         condiciones = []
         parametros = []
         if canal:

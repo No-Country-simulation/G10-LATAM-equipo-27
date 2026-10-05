@@ -12,6 +12,11 @@ llm = ChatGroq(model=_modelo, temperature=0.1)
 class FormatoSalida(BaseModel):
     relevancia: int = Field(description="KPI Cuantitativo: Importancia y profundidad del mensaje (0-100)")
     sentimiento: str = Field(description="KPI Cualitativo: Clasifica el mensaje como Positivo, Negativo o Neutral")
+    sentiment_score: float = Field(
+    ge=0.0,
+    le=1.0,
+    description="Confianza del modelo en la clasificación del sentimiento, entre 0.0 y 1.0"
+)
     temas_clave: str = Field(description="KPI Cualitativo: Lista de 2 o 3 hashtags sobre el mensaje")
     segmento: str = Field(description="KPI Cualitativo: Público objetivo del mensaje")
     razonamiento: str = Field(description="Justificación breve de por qué se asignó ese score")
@@ -29,9 +34,13 @@ REGLAS DE EVALUACIÓN (KPIs):
    - Mensajes vacíos, saludos o quejas sin fundamentos ("hola", "esto no sirve") valen 20 o menos.
    - Debates profundos, quejas muy bien argumentadas, feedback constructivo o casos de éxito valen 80 o más.
 2. SENTIMIENTO (Cualitativo): Define si el tono del usuario es Positivo, Negativo o Neutral.
-3. TEMAS (Cualitativo): Extrae 2 o 3 hashtags exactos. (Si es basura, escribe "N/A").
-4. SEGMENTO (Cualitativo): Define a qué público va dirigido. (Si es basura, escribe "N/A").
-5. RAZONAMIENTO: Explica en una sola frase por qué le diste ese puntaje de relevancia.
+3. CONFIANZA DEL SENTIMIENTO: Asigna un valor entre 0.0 y 1.0 que indique qué tan seguro estás de la clasificación del sentimiento.
+   - 1.0 significa confianza máxima.
+   - Valores cercanos a 0.5 indican ambigüedad.
+   - Este valor NO representa la relevancia del mensaje.
+4. TEMAS (Cualitativo): Extrae 2 o 3 hashtags exactos. (Si es basura, escribe "N/A").
+5. SEGMENTO (Cualitativo): Define a qué público va dirigido. (Si es basura, escribe "N/A").
+6. RAZONAMIENTO: Explica en una sola frase por qué le diste ese puntaje de relevancia.
 
 ¡CRÍTICO!: NUNCA respondas con texto libre. DEBES DEVOLVER EL OBJETO JSON ESTRUCTURADO.
 """

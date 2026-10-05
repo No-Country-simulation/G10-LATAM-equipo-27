@@ -56,7 +56,13 @@ def procesar_actividad(paquete: dict) -> dict:
             interaccion.tipo,
             texto,
             hash_mensaje,
-        )
+            interaccion.guild_id,
+            interaccion.guild_name,
+            interaccion.channel_id,
+            interaccion.message_id,
+            interaccion.author_id,
+            interaccion.created_at,
+    )
         if es_nueva:
             nuevas += 1
         else:
