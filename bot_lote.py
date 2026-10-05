@@ -12,7 +12,7 @@ from procesamiento import procesar_actividad
 
 # el token se lee distinto según dónde corra el código, y así este mismo archivo sirve en los dos:
 # - en Colab no hay .env: el token vive en Secrets (icono de llave), con un secreto llamado
-#   DISCORD_BOT_TOKEN y "Notebook access" activado. Además Colab ya tiene su propio bucle de
+#   DISCORD_BOT_TOKEN (o DISCORD_TOKEN) y "Notebook access" activado. Además Colab ya tiene su propio bucle de
 #   eventos y choca con discord.py: nest_asyncio.apply() lo resuelve (sin eso, cliente.run
 #   revienta con "RuntimeError: This event loop is already running")
 # - en la PC: el token está en el archivo .env
@@ -23,12 +23,16 @@ except ImportError:
 
     # el .env se busca junto a este archivo, no en la carpeta desde la que se corra el programa
     load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
-    TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+    # acepta los dos nombres: DISCORD_BOT_TOKEN (el de este proyecto) y DISCORD_TOKEN (el que usa app.py)
+    TOKEN = os.getenv("DISCORD_BOT_TOKEN") or os.getenv("DISCORD_TOKEN")
 else:
     import nest_asyncio
 
     nest_asyncio.apply()
-    TOKEN = userdata.get("DISCORD_BOT_TOKEN")
+    try:
+        TOKEN = userdata.get("DISCORD_BOT_TOKEN")
+    except Exception:
+        TOKEN = userdata.get("DISCORD_TOKEN")
 
 # None = leer todo el historial de cada canal. Con un límite (por ejemplo 20) se pierden los
 # mensajes más viejos si un canal recibe más mensajes nuevos que ese número entre una corrida
@@ -77,6 +81,6 @@ async def on_ready():
 
 if __name__ == "__main__":
     if not TOKEN:
-        raise SystemExit("Falta DISCORD_BOT_TOKEN (en el .env, o en Secrets si es Colab)")
+        raise SystemExit("Falta DISCORD_BOT_TOKEN o DISCORD_TOKEN (en el .env, o en Secrets si es Colab)")
     crear_tabla()
     cliente.run(TOKEN)
