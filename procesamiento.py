@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from base_datos import crear_tabla, guardar_interaccion
 from limpieza import calcular_hash, limpiar_texto
 from modelos import SolicitudActividad
+from periodos import periodo_de
 
 
 def procesar_actividad(paquete: dict) -> dict:
@@ -48,21 +49,25 @@ def procesar_actividad(paquete: dict) -> dict:
         hash_mensaje = calcular_hash(
             solicitud.origen_comunidad, interaccion.canal, interaccion.autor, texto
         )
+        # la semana de cada mensaje sale de su propia fecha de envío, no de la del lote: así un
+        # mensaje del 20 de septiembre dice Semana_01 aunque se guarde en la misma corrida que
+        # uno del 1 de octubre. Si el mensaje no trae fecha, uso la semana del lote
+        periodo = periodo_de(interaccion.enviado_en, solicitud.periodo_referencia)
         es_nueva = guardar_interaccion(
             solicitud.origen_comunidad,
-            solicitud.periodo_referencia,
+            periodo,
             interaccion.autor,
             interaccion.canal,
             interaccion.tipo,
             texto,
             hash_mensaje,
+            interaccion.enviado_en,
             interaccion.guild_id,
             interaccion.guild_name,
             interaccion.channel_id,
             interaccion.message_id,
             interaccion.author_id,
-            interaccion.created_at,
-    )
+        )
         if es_nueva:
             nuevas += 1
         else:

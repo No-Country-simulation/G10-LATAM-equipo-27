@@ -23,3 +23,7 @@ __pycache__/
 # Salidas generadas
 # (Descomenta la siguiente línea si no quieres subir el JSON de resultados)
 # resultados_kpis.json
+
+# Base de datos del proyecto y sus respaldos
+*.db
+*.db.respaldo_*

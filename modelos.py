@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -10,6 +9,9 @@ class Interaccion(BaseModel):
     canal: str = Field(min_length=1)
     tipo: Optional[str] = None
     texto: str = Field(min_length=1)
+    # fecha real de envío en Discord (UTC). La dejé opcional para que un paquete armado
+    # a mano, sin fechas (como los JSON de ejemplo de las instrucciones), siga siendo válido
+    enviado_en: Optional[str] = None
 
     # Metadatos originales de Discord.
     # Son opcionales para mantener compatibilidad con datos históricos.
@@ -18,7 +20,7 @@ class Interaccion(BaseModel):
     channel_id: Optional[str] = None
     message_id: Optional[str] = None
     author_id: Optional[str] = None
-    created_at: Optional[datetime] = None
+    
 
 
 class SolicitudActividad(BaseModel):

@@ -43,7 +43,7 @@ with col2:
         with st.expander("Ver JSON crudo de la Base de Datos"):
             st.json(datos_locales)
     except Exception as e:
-        st.warning(f"No se pudo leer la base de datos local: {e}")
+        st.warning("💡 La base de datos está vacía en este entorno. Por favor, haz clic en 'Extraer últimos mensajes de Discord' para inicializarla.")
 
 st.divider()
 

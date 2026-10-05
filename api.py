@@ -37,11 +37,11 @@ def adaptar_mensaje(item: dict) -> dict:
             "author_id": item.get("author_id"),
             "author_name": item.get("autor"),
             "content": item.get("texto"),
-            "created_at": item.get("created_at"),
+            "created_at": item.get("enviado_en"),
         },
         "analysis": {
             "sentiment": sentimiento,
-            # El motor actual no genera confianza de sentimiento.
+            # Confianza real generada por el modelo para la clasificación del sentimiento.
             "sentiment_score": item.get("sentiment_score") or 0.0,
             "topic": temas,
             "keywords": keywords,
