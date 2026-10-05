@@ -21,7 +21,7 @@ def adaptar_mensaje(item: dict) -> dict:
     temas = item.get("temas_clave") or ""
 
     keywords = [
-        tema.lstrip("#")
+        tema.lstrip("#").rstrip(",")
         for tema in temas.split()
         if tema.startswith("#")
     ]
