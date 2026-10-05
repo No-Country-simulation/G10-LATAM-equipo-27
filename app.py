@@ -89,6 +89,10 @@ if st.button("🚀 Ejecutar Análisis", type="primary"):
                         "id_mensaje": msg["id"],
                         "autor": msg["autor"],
                         "canal_origen": msg["canal"],
+                        "comunidad": msg.get("origen_comunidad"), 
+                        "fecha_envio": msg.get("enviado_en"),
+                        "fecha_extraccion": msg.get("creado_en"),
+                        "semana": msg.get("periodo_referencia"),
                         "texto_original": msg["texto"],
                         "kpis": kpis
                     }
