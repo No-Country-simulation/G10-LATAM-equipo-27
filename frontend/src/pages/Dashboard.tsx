@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   CheckCircle,
   FileText,
@@ -13,12 +14,66 @@ import SentimentChart from '../charts/SentimentChart'
 import TopicsChart from '../charts/TopicsChart'
 import SentimentEvolution from '../charts/SentimentEvolution'
 import AudienceHeatmap from '../charts/AudienceHeatmap'
-import { mockCommunityData } from '../data/mockCommunityData'
+
+type DashboardData = {
+  messages_processed: number
+  messages_change: number | null
+  total_audience: number
+  audience_change: number | null
+  positive_sentiment: number
+  sentiment_change: number | null
+  topics_detected: number
+  new_topics: number
+  content_generated: number
+  pending_approvals: number
+}
 
 
 
 function Dashboard() {
-  const dashboardData = mockCommunityData.dashboard
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const response = await fetch(
+          'http://127.0.0.1:8001/api/community/dashboard'
+        )
+
+        if (!response.ok) {
+          throw new Error('No fue posible cargar el dashboard')
+        }
+
+        const data: DashboardData = await response.json()
+        setDashboardData(data)
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Error desconocido al cargar el dashboard'
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboard()
+  }, [])
+
+  if (loading) {
+    return <div className="p-6 text-slate-500">Cargando dashboard...</div>
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <div className="p-6 text-red-600">
+        {error ?? 'No hay datos disponibles'}
+      </div>
+    )
+  }
+
 
 
   return (
@@ -42,14 +97,22 @@ function Dashboard() {
         <KpiCard
           title="Mensajes procesados"
           value={dashboardData.messages_processed.toLocaleString("es-CO")}
-          description={`+${dashboardData.messages_change.toLocaleString("es-CO")}% esta semana`}
+          description={
+            dashboardData.messages_change === null
+              ? 'Sin comparación'
+              : `${dashboardData.messages_change > 0 ? '+' : ''}${dashboardData.messages_change.toLocaleString('es-CO')}% esta semana`
+          }
           icon={<MessageSquare size={20} />}
         />
 
         <KpiCard
           title="Total de audiencia"
           value={dashboardData.total_audience.toLocaleString("es-CO")}
-          description={`+${dashboardData.audience_change.toLocaleString("es-CO")}% esta semana`}
+          description={
+            dashboardData.audience_change === null
+              ? 'Sin comparación'
+              : `${dashboardData.audience_change > 0 ? '+' : ''}${dashboardData.audience_change.toLocaleString('es-CO')}% esta semana`
+          }
           icon={<Users size={20} />}
         />
 
@@ -57,7 +120,11 @@ function Dashboard() {
         <KpiCard
           title="Sentimiento positivo"
           value={`${dashboardData.positive_sentiment}%`}
-          description={`+${dashboardData.sentiment_change.toLocaleString("es-CO")}% esta semana`}
+          description={
+            dashboardData.sentiment_change === null
+              ? 'Sin comparación'
+              : `${dashboardData.sentiment_change > 0 ? '+' : ''}${dashboardData.sentiment_change.toLocaleString('es-CO')} puntos esta semana`
+          }
           icon={<Sparkles size={20} />}
         />
 
