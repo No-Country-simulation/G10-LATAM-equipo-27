@@ -1,3 +1,4 @@
+from ver_json import obtener_json
 import streamlit as st
 import subprocess
 import json
@@ -35,21 +36,41 @@ with col1:
                         st.code(result.stderr)
 
 with col2:
-    try:
-        from ver_json import obtener_json
-        datos_locales = obtener_json()
-        total_mensajes = datos_locales.get("total", 0)
-        st.info(f"📊 Actualmente hay **{total_mensajes}** mensajes en la base de datos local listos para ser analizados.")
-        with st.expander("Ver JSON crudo de la Base de Datos"):
-            st.json(datos_locales)
-    except Exception as e:
-        st.warning("💡 La base de datos está vacía en este entorno. Por favor, haz clic en 'Extraer últimos mensajes de Discord' para inicializarla.")
-
+    espacio_contador = st.empty()
+    espacio_json = st.empty()
 st.divider()
 
 # --- 2. SELECCIÓN DE CEREBRO Y ANÁLISIS ---
 st.header("2. Evaluación con IA")
 
+st.subheader("Filtro por Fechas")
+col_fecha1, col_fecha2 = st.columns(2)
+with col_fecha1:
+    fecha_desde = st.date_input("Desde", value=None)
+with col_fecha2:
+    fecha_hasta = st.date_input("Hasta", value=None)
+
+error_fechas = False
+if fecha_desde and fecha_hasta and fecha_desde > fecha_hasta:
+    st.error("Error: La fecha 'Desde' no puede ser mayor que 'Hasta'.")
+    error_fechas = True
+
+total_mensajes = 0
+datos_locales = {}
+
+try:
+    datos_locales = obtener_json(desde=fecha_desde, hasta=fecha_hasta)
+    total_mensajes = datos_locales.get("total", 0)
+    
+    # Llenar el espacio reservado arriba
+    espacio_contador.info(f"📊 Actualmente hay **{total_mensajes}** mensajes en la base de datos local listos para ser analizados.")
+    with espacio_json.expander("Ver JSON crudo de la Base de Datos"):
+        st.json(datos_locales)
+        
+    if total_mensajes == 0 and not error_fechas:
+        st.warning("No hay mensajes para analizar en este rango de fechas.")
+except Exception as e:
+    espacio_contador.warning("💡 La base de datos está vacía en este entorno. Por favor, haz clic en 'Extraer últimos mensajes de Discord' para inicializarla.")
 opciones_cerebro = {
     "Groq (openai/gpt-oss-120b) - Rápido": "cerebro_ia",
     "Google Gemma 4 31B - Mayor límite de uso": "cerebro_ia_gemma_4",
@@ -61,7 +82,7 @@ modulo_cerebro_nombre = opciones_cerebro[cerebro_elegido]
 
 limite_mensajes = st.slider("Número de mensajes a analizar (para no agotar tokens en pruebas):", 1, 20, 4)
 
-if st.button("🚀 Ejecutar Análisis", type="primary"):
+if st.button("🚀 Ejecutar Análisis", type="primary", disabled=(total_mensajes == 0 or error_fechas)):
     with st.spinner(f"Analizando {limite_mensajes} mensajes usando {modulo_cerebro_nombre}..."):
         try:
             import importlib
@@ -155,3 +176,5 @@ if os.path.exists("resultados_kpis.json"):
     )
 else:
     st.info("Aún no se ha generado el archivo de resultados. Ejecuta el análisis en el paso 2.")
+
+
