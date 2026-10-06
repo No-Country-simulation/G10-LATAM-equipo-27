@@ -1,10 +1,21 @@
 ﻿from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from ver_json import obtener_json
 from servicio_dashboard import obtener_dashboard
 
 app = FastAPI(
     title="CloudEdTech AI & Community API",
     version="1.0.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 def adaptar_mensaje(item: dict) -> dict:
