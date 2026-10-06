@@ -7,6 +7,7 @@ from servicio_dashboard import (
     obtener_distribucion_temas,
     obtener_evolucion_sentimiento,
     obtener_actividad_audiencia,
+    obtener_hashtags,
 )
 
 app = FastAPI(
@@ -80,4 +81,5 @@ def analytics():
     },
     "topics": obtener_distribucion_temas(),
     "activity_heatmap": obtener_actividad_audiencia(),
+    "hashtags": obtener_hashtags(),
 }

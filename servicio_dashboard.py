@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from base_datos import listar_interacciones
 from periodos import ZONA_PROYECTO
+import re
 
 
 
@@ -517,3 +518,116 @@ def obtener_actividad_audiencia() -> dict:
         "hours": horas,
         "data": data,
     }
+
+def extraer_hashtags(temas_clave: str | None) -> list[str]:
+    if not temas_clave:
+        return []
+
+    hashtags = re.findall(
+        r"#([\wáéíóúñÁÉÍÓÚÑ-]+)",
+        temas_clave,
+    )
+
+    resultado = []
+    vistos = set()
+
+    for hashtag in hashtags:
+        normalizado = hashtag.strip().lower()
+
+        if not normalizado or normalizado == "n/a":
+            continue
+
+        if normalizado not in vistos:
+            vistos.add(normalizado)
+            resultado.append(normalizado)
+
+    return resultado
+
+def obtener_hashtags() -> list[dict]:
+    interacciones = obtener_interacciones_reales()
+    ventanas = obtener_ventanas_comparables()
+
+    interacciones_actuales = obtener_interacciones_reales(
+        desde_utc=ventanas["actual_desde"],
+        hasta_utc=ventanas["actual_hasta"] + timedelta(seconds=1),
+    )
+
+    interacciones_anteriores = obtener_interacciones_reales(
+        desde_utc=ventanas["anterior_desde"],
+        hasta_utc=ventanas["anterior_hasta"] + timedelta(seconds=1),
+    )
+
+    def contar_hashtags(interacciones_periodo):
+        conteo = {}
+
+        for item in interacciones_periodo:
+            if item.get("estado") != "analizado":
+                continue
+
+            for hashtag in extraer_hashtags(
+                item.get("temas_clave")
+            ):
+                conteo[hashtag] = conteo.get(hashtag, 0) + 1
+
+        return conteo
+
+    conteo_actual = contar_hashtags(interacciones_actuales)
+    conteo_anterior = contar_hashtags(interacciones_anteriores)
+
+    estadisticas = {}
+
+    for item in interacciones:
+        if item.get("estado") != "analizado":
+            continue
+
+        hashtags = extraer_hashtags(
+            item.get("temas_clave")
+        )
+
+        for hashtag in hashtags:
+            if hashtag not in estadisticas:
+                estadisticas[hashtag] = {
+                    "mentions": 0,
+                    "positive": 0,
+                }
+
+            estadisticas[hashtag]["mentions"] += 1
+
+            if item.get("sentimiento") == "Positivo":
+                estadisticas[hashtag]["positive"] += 1
+
+    resultado = []
+
+    for indice, (hashtag, datos) in enumerate(
+        sorted(
+            estadisticas.items(),
+            key=lambda item: item[1]["mentions"],
+            reverse=True,
+        ),
+        start=1,
+    ):
+        sentiment = round(
+            (datos["positive"] / datos["mentions"]) * 100,
+            1,
+        )
+
+        actual = conteo_actual.get(hashtag, 0)
+        anterior = conteo_anterior.get(hashtag, 0)
+
+        if anterior > 0:
+            growth = round(
+                ((actual - anterior) / anterior) * 100,
+                1,
+            )
+        else:
+            growth = None
+
+        resultado.append({
+            "id": indice,
+            "name": f"#{hashtag}",
+            "mentions": datos["mentions"],
+            "sentiment": sentiment,
+            "growth": growth,
+        })
+
+    return resultado
