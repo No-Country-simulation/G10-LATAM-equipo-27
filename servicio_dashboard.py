@@ -324,3 +324,62 @@ def obtener_dashboard() -> dict:
         "content_generated": 0,
         "pending_approvals": 0,
     }
+
+def obtener_distribucion_sentimiento() -> list[dict]:
+    interacciones = obtener_interacciones_reales()
+
+    analizados = [
+        item
+        for item in interacciones
+        if item.get("estado") == "analizado"
+        and item.get("sentimiento")
+    ]
+
+    total = len(analizados)
+
+    conteo = {
+        "Positivo": 0,
+        "Neutral": 0,
+        "Negativo": 0,
+    }
+
+    for item in analizados:
+        sentimiento = item.get("sentimiento")
+
+        if sentimiento in conteo:
+            conteo[sentimiento] += 1
+
+    if total == 0:
+        return [
+            {"name": nombre, "value": 0.0}
+            for nombre in conteo
+        ]
+
+    return [
+        {
+            "name": nombre,
+            "value": round((cantidad / total) * 100, 1),
+        }
+        for nombre, cantidad in conteo.items()
+    ]
+
+def obtener_distribucion_temas() -> list[dict]:
+    datos = calcular_temas_detectados()
+    distribucion = datos["distribucion"]
+
+    total = sum(distribucion.values())
+
+    if total == 0:
+        return []
+
+    return [
+        {
+            "topic": tema,
+            "percentage": round((cantidad / total) * 100, 1),
+        }
+        for tema, cantidad in sorted(
+            distribucion.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+    ]

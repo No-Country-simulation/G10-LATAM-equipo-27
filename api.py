@@ -1,7 +1,11 @@
 ﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from ver_json import obtener_json
-from servicio_dashboard import obtener_dashboard
+from servicio_dashboard import (
+    obtener_dashboard,
+    obtener_distribucion_sentimiento,
+    obtener_distribucion_temas,
+)
 
 app = FastAPI(
     title="CloudEdTech AI & Community API",
@@ -64,3 +68,12 @@ def adaptar_mensaje(item: dict) -> dict:
 @app.get("/api/community/dashboard")
 def dashboard():
     return obtener_dashboard()
+
+@app.get("/api/community/analytics")
+def analytics():
+    return {
+        "sentiment": {
+            "distribution": obtener_distribucion_sentimiento()
+        },
+        "topics": obtener_distribucion_temas(),
+    }
