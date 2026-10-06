@@ -18,6 +18,12 @@ class FormatoSalida(BaseModel):
     description="Confianza del modelo en la clasificación del sentimiento, entre 0.0 y 1.0"
 )
     temas_clave: str = Field(description="KPI Cualitativo: Lista de 2 o 3 hashtags sobre el mensaje")
+    tema: str = Field(
+    description=(
+        "Tema principal del mensaje. Debe ser exactamente uno de estos valores: "
+        "EMPLEO, EDUCACION, IA, DESARROLLO, PLATAFORMA, COMUNIDAD u OTRO"
+    )
+)
     segmento: str = Field(
         description=(
             "KPI Cualitativo. Debe ser exactamente uno de estos valores: "
@@ -45,7 +51,16 @@ REGLAS DE EVALUACIÓN (KPIs):
    - Valores cercanos a 0.5 indican ambigüedad.
    - Este valor NO representa la relevancia del mensaje.
 4. TEMAS (Cualitativo): Extrae 2 o 3 hashtags exactos. (Si es basura, escribe "N/A").
-5. SEGMENTO (Cualitativo): Clasifica el mensaje usando EXACTAMENTE UNA de estas categorías:
+5. TEMA PRINCIPAL (Cualitativo): Clasifica el mensaje usando EXACTAMENTE UNA de estas categorías:
+   - EMPLEO: búsqueda de trabajo, vacantes, entrevistas, oportunidades laborales, portafolio profesional o empleo.
+   - EDUCACION: aprendizaje, formación, cursos, estudiantes o procesos educativos.
+   - IA: inteligencia artificial, agentes, modelos de IA, LLMs o tecnologías directamente relacionadas con IA.
+   - DESARROLLO: programación, APIs, bots, integraciones, debugging, código o desarrollo de software.
+   - PLATAFORMA: experiencia de uso, rendimiento, usabilidad, funcionamiento o feedback sobre CloudEdTech.
+   - COMUNIDAD: interacción general entre miembros, participación, conversaciones o asuntos de la comunidad.
+   - OTRO: cuando el mensaje no encaje claramente en ninguna categoría anterior.
+   Devuelve ÚNICAMENTE uno de esos valores. No inventes nuevas categorías.
+6. SEGMENTO (Cualitativo): Clasifica el mensaje usando EXACTAMENTE UNA de estas categorías:
    - ESTUDIANTE: personas en proceso de formación o aprendizaje.
    - EGRESADO: personas que ya terminaron sus estudios.
    - BUSCA_EMPLEO: personas buscando trabajo, vacantes u oportunidades laborales.
@@ -54,7 +69,7 @@ REGLAS DE EVALUACIÓN (KPIs):
    - USUARIO_COMUNIDAD: usuarios generales de CloudEdTech o miembros de la comunidad que no encajen mejor en otra categoría.
    - OTRO: cuando no sea posible determinar una categoría anterior.
    Devuelve ÚNICAMENTE uno de esos valores. No inventes nuevas categorías.
-6. RAZONAMIENTO: Explica en una sola frase por qué le diste ese puntaje de relevancia.
+7. RAZONAMIENTO: Explica en una sola frase por qué le diste ese puntaje de relevancia.
 
 ¡CRÍTICO!: NUNCA respondas con texto libre. DEBES DEVOLVER EL OBJETO JSON ESTRUCTURADO.
 """

@@ -1,4 +1,4 @@
-from base_datos import guardar_analisis, listar_interacciones
+﻿from base_datos import guardar_analisis, listar_interacciones
 from cerebro_ia import cadena
 
 
@@ -27,14 +27,15 @@ def analizar_pendientes(limite: int = 20) -> dict:
             kpis = respuesta.model_dump()
 
             guardado = guardar_analisis(
-    mensaje["id"],
-    kpis["relevancia"],
-    kpis["sentimiento"],
-    kpis["sentiment_score"],
-    kpis["temas_clave"],
-    kpis["segmento"],
-    kpis["razonamiento"],
-)
+                mensaje["id"],
+                kpis["relevancia"],
+                kpis["sentimiento"],
+                kpis["sentiment_score"],
+                kpis["temas_clave"],
+                kpis["tema"],
+                kpis["segmento"],
+                kpis["razonamiento"],
+            )
 
             if guardado:
                 analizados += 1
@@ -77,6 +78,7 @@ def reanalizar_interacciones(ids: list[int]) -> dict:
                 kpis["sentimiento"],
                 kpis["sentiment_score"],
                 kpis["temas_clave"],
+                kpis["tema"],
                 kpis["segmento"],
                 kpis["razonamiento"],
             )

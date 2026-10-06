@@ -1,5 +1,6 @@
 ﻿from fastapi import FastAPI
 from ver_json import obtener_json
+from servicio_dashboard import obtener_dashboard
 
 app = FastAPI(
     title="CloudEdTech AI & Community API",
@@ -49,24 +50,6 @@ def adaptar_mensaje(item: dict) -> dict:
         },
     }
 
-
-@app.get("/health")
-def health():
-    return {
-        "status": "ok",
-        "service": "cloudedtech-ai-community"
-    }
-
-@app.get("/api/community/messages")
-def list_messages():
-    data = obtener_json()
-
-    mensajes = [
-        adaptar_mensaje(item)
-        for item in data["interacciones"]
-    ]
-
-    return {
-        "total": len(mensajes),
-        "messages": mensajes,
-    }
+@app.get("/api/community/dashboard")
+def dashboard():
+    return obtener_dashboard()

@@ -59,6 +59,7 @@ def crear_tabla() -> None:
             "sentimiento": "TEXT",
             "sentiment_score": "REAL",
             "temas_clave": "TEXT",
+            "tema": "TEXT",
             "segmento": "TEXT",
             "razonamiento": "TEXT",
         }
@@ -149,6 +150,7 @@ def guardar_analisis(
     sentimiento,
     sentiment_score,
     temas_clave,
+    tema,
     segmento,
     razonamiento,
 ) -> bool:
@@ -163,6 +165,7 @@ def guardar_analisis(
                 sentimiento = ?,
                 sentiment_score = ?,
                 temas_clave = ?,
+                tema = ?,
                 segmento = ?,
                 razonamiento = ?,
                 estado = 'analizado'
@@ -173,6 +176,7 @@ def guardar_analisis(
                 sentimiento,
                 sentiment_score,
                 temas_clave,
+                tema,
                 segmento,
                 razonamiento,
                 id_mensaje,
@@ -217,7 +221,7 @@ def listar_interacciones(canal=None, estado=None, limite=100, desde_utc=None, ha
             "id, origen_comunidad, periodo_referencia, "
             "autor, canal, tipo, texto, enviado_en, estado, creado_en, "
             "guild_id, guild_name, channel_id, message_id, author_id, "
-            "relevancia, sentimiento, sentiment_score, temas_clave, segmento, razonamiento "
+            "relevancia, sentimiento, sentiment_score, temas_clave, tema, segmento, razonamiento "
             "FROM interacciones"
         )
 
