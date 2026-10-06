@@ -442,3 +442,78 @@ def obtener_evolucion_sentimiento() -> list[dict]:
         })
 
     return resultado
+
+
+def obtener_actividad_audiencia() -> dict:
+    interacciones = obtener_interacciones_reales()
+
+    horas = [
+        "00:00",
+        "04:00",
+        "08:00",
+        "12:00",
+        "16:00",
+        "20:00",
+    ]
+
+    nombres_dias = [
+        "Lun",
+        "Mar",
+        "Mié",
+        "Jue",
+        "Vie",
+        "Sáb",
+        "Dom",
+    ]
+
+    conteos = {
+        dia: [0, 0, 0, 0, 0, 0]
+        for dia in nombres_dias
+    }
+
+    for item in interacciones:
+        enviado_en = item.get("enviado_en")
+
+        if not enviado_en:
+            continue
+
+        fecha = datetime.fromisoformat(enviado_en)
+        fecha_local = fecha.astimezone(ZONA_PROYECTO)
+
+        dia = nombres_dias[fecha_local.weekday()]
+
+        indice_hora = min(fecha_local.hour // 4, 5)
+
+        conteos[dia][indice_hora] += 1
+
+    maximo = max(
+        (
+            cantidad
+            for valores in conteos.values()
+            for cantidad in valores
+        ),
+        default=0,
+    )
+
+    data = []
+
+    for dia in nombres_dias:
+        counts = conteos[dia]
+
+        values = [
+            round((cantidad / maximo) * 100)
+            if maximo > 0
+            else 0
+            for cantidad in counts
+        ]
+
+        data.append({
+            "day": dia,
+            "values": values,
+            "counts": counts,
+        })
+
+    return {
+        "hours": horas,
+        "data": data,
+    }

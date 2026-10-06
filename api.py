@@ -6,6 +6,7 @@ from servicio_dashboard import (
     obtener_distribucion_sentimiento,
     obtener_distribucion_temas,
     obtener_evolucion_sentimiento,
+    obtener_actividad_audiencia,
 )
 
 app = FastAPI(
@@ -78,4 +79,5 @@ def analytics():
         "evolution": obtener_evolucion_sentimiento(),
     },
     "topics": obtener_distribucion_temas(),
+    "activity_heatmap": obtener_actividad_audiencia(),
 }
