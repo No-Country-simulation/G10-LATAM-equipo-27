@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import {
     Line,
     LineChart,
@@ -7,15 +9,65 @@ import {
     YAxis,
 } from 'recharts'
 
-import { mockCommunityData } from '../data/mockCommunityData'
 
+type EvolutionItem = {
+    day: string
+    date: string
+    positive: number
+    messages: number
+}
 
-
+type AnalyticsResponse = {
+    sentiment: {
+        evolution: EvolutionItem[]
+    }
+}
 
 function SentimentEvolution() {
 
-    const data = mockCommunityData.sentiment.evolution
-    
+    const [data, setData] = useState<EvolutionItem[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+
+        const loadEvolution = async () => {
+
+            try {
+
+                const response = await fetch(
+                    'http://127.0.0.1:8001/api/community/analytics'
+                )
+
+                if (!response.ok) {
+                    throw new Error(
+                        'No fue posible cargar la evolución del sentimiento'
+                    )
+                }
+
+                const result: AnalyticsResponse = await response.json()
+
+                setData(result.sentiment.evolution)
+
+            } catch (err) {
+
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : 'Error desconocido al cargar la evolución'
+                )
+
+            } finally {
+
+                setLoading(false)
+
+            }
+        }
+
+        loadEvolution()
+
+    }, [])
+
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
@@ -25,64 +77,90 @@ function SentimentEvolution() {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                    Porcentaje de sentimiento positivo durante la semana
+                    Porcentaje de sentimiento positivo por día con actividad
                 </p>
             </div>
 
-            <div className="mt-6 h-72">
+            {loading && (
+                <div className="flex h-72 items-center justify-center text-sm text-slate-500">
+                    Cargando evolución...
+                </div>
+            )}
 
-                <ResponsiveContainer width="100%" height="100%">
+            {error && (
+                <div className="flex h-72 items-center justify-center text-sm text-red-600">
+                    {error}
+                </div>
+            )}
 
-                    <LineChart
-                        data={data}
-                        margin={{
-                            top: 10,
-                            right: 10,
-                            left: 0,
-                            bottom: 5,
-                        }}
-                    >
+            {!loading && !error && (
+                <div className="mt-6 h-72">
 
-                        <XAxis
-                            dataKey="day"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12 }}
-                        />
+                    <ResponsiveContainer width="100%" height="100%">
 
-                        <YAxis
-                            domain={[50, 80]}
-                            tickFormatter={(value) => `${value}%`}
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12 }}
-                        />
-
-                        <Tooltip
-                            formatter={(value) => [
-                                `${value}%`,
-                                'Sentimiento positivo',
-                            ]}
-                        />
-
-                        <Line
-                            type="monotone"
-                            dataKey="positive"
-                            stroke="#f97316"
-                            strokeWidth={3}
-                            dot={{
-                                r: 4,
+                        <LineChart
+                            data={data}
+                            margin={{
+                                top: 10,
+                                right: 10,
+                                left: 0,
+                                bottom: 5,
                             }}
-                            activeDot={{
-                                r: 6,
-                            }}
-                        />
+                        >
 
-                    </LineChart>
+                            <XAxis
+                                dataKey="date"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12 }}
+                                tickFormatter={(value) => {
+                                    const [, month, day] = value.split('-')
+                                    return `${day}/${month}`
+                                }}
+                            />
 
-                </ResponsiveContainer>
+                            <YAxis
+                                domain={[0, 100]}
+                                tickFormatter={(value) => `${value}%`}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12 }}
+                            />
 
-            </div>
+                            <Tooltip
+                                labelFormatter={(value) => `Fecha: ${value}`}
+                                formatter={(value, name, item) => {
+
+                                    if (name === 'positive') {
+                                        return [
+                                            `${value}%`,
+                                            `Sentimiento positivo (${item.payload.messages} mensajes)`,
+                                        ]
+                                    }
+
+                                    return [value, name]
+                                }}
+                            />
+
+                            <Line
+                                type="monotone"
+                                dataKey="positive"
+                                stroke="#f97316"
+                                strokeWidth={3}
+                                dot={{
+                                    r: 4,
+                                }}
+                                activeDot={{
+                                    r: 6,
+                                }}
+                            />
+
+                        </LineChart>
+
+                    </ResponsiveContainer>
+
+                </div>
+            )}
 
         </div>
     )
