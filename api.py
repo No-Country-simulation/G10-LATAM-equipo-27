@@ -5,6 +5,7 @@ from servicio_dashboard import (
     obtener_dashboard,
     obtener_distribucion_sentimiento,
     obtener_distribucion_temas,
+    obtener_evolucion_sentimiento,
 )
 
 app = FastAPI(
@@ -72,8 +73,9 @@ def dashboard():
 @app.get("/api/community/analytics")
 def analytics():
     return {
-        "sentiment": {
-            "distribution": obtener_distribucion_sentimiento()
-        },
-        "topics": obtener_distribucion_temas(),
-    }
+    "sentiment": {
+        "distribution": obtener_distribucion_sentimiento(),
+        "evolution": obtener_evolucion_sentimiento(),
+    },
+    "topics": obtener_distribucion_temas(),
+}

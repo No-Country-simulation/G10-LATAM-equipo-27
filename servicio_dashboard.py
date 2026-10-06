@@ -383,3 +383,62 @@ def obtener_distribucion_temas() -> list[dict]:
             reverse=True,
         )
     ]
+
+def obtener_evolucion_sentimiento() -> list[dict]:
+    interacciones = obtener_interacciones_reales()
+
+    analizados = [
+        item
+        for item in interacciones
+        if item.get("estado") == "analizado"
+        and item.get("sentimiento")
+        and item.get("enviado_en")
+    ]
+
+    dias = {}
+
+    for item in analizados:
+        fecha = datetime.fromisoformat(item["enviado_en"])
+        fecha_local = fecha.astimezone(ZONA_PROYECTO)
+
+        clave = fecha_local.date()
+
+        if clave not in dias:
+            dias[clave] = {
+                "total": 0,
+                "positivos": 0,
+            }
+
+        dias[clave]["total"] += 1
+
+        if item["sentimiento"] == "Positivo":
+            dias[clave]["positivos"] += 1
+
+    nombres_dias = {
+        0: "Lun",
+        1: "Mar",
+        2: "Mié",
+        3: "Jue",
+        4: "Vie",
+        5: "Sáb",
+        6: "Dom",
+    }
+
+    resultado = []
+
+    for fecha in sorted(dias):
+        datos = dias[fecha]
+
+        porcentaje = round(
+            (datos["positivos"] / datos["total"]) * 100,
+            1,
+        )
+
+        resultado.append({
+            "day": nombres_dias[fecha.weekday()],
+            "date": fecha.isoformat(),
+            "positive": porcentaje,
+            "messages": datos["total"],
+        })
+
+    return resultado
