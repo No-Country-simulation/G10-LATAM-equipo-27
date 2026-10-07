@@ -31,6 +31,23 @@ function ContentStudio() {
 
   const [copiedFormat, setCopiedFormat] =
     useState<ContentFormat | null>(null)
+  const [showDiscordFiles, setShowDiscordFiles] =
+    useState(false)
+
+  const discordFiles = [
+    {
+      id: 1,
+      name: 'imagen-comunidad.png',
+      type: 'Imagen',
+      size: '—',
+    },
+    {
+      id: 2,
+      name: 'documento-adjunto.pdf',
+      type: 'PDF',
+      size: '—',
+    },
+  ]
 
   const [drafts, setDrafts] = useState<
     Record<ContentFormat, DraftState>
@@ -359,6 +376,65 @@ ${selectedStory.message}
                   }
                   className="mt-3 min-h-72 flex-1 resize-y rounded-xl border border-slate-200 p-4 text-sm leading-6 text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-500"
                 />
+                {format.id === 'discord' && (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          Archivos adjuntos
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-500">
+                          {discordFiles.length === 0
+                            ? 'Sin archivos adjuntos'
+                            : `${discordFiles.length} archivos asociados a este mensaje`}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={discordFiles.length === 0}
+                          onClick={() =>
+                            setShowDiscordFiles((current) => !current)
+                          }
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                        >
+                          {showDiscordFiles ? 'Ocultar archivos' : 'Ver archivos'}
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={discordFiles.length === 0}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                        >
+                          Descargar archivos
+                        </button>
+                      </div>
+                    </div>
+
+                    {showDiscordFiles && discordFiles.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {discordFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
+                          >
+                            <div>
+                              <p className="text-xs font-semibold text-slate-700">
+                                {file.name}
+                              </p>
+
+                              <p className="mt-0.5 text-xs text-slate-400">
+                                {file.type} · {file.size}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Acciones auxiliares */}
                 <div className="mt-4 grid grid-cols-2 gap-2">
@@ -416,7 +492,8 @@ ${selectedStory.message}
                 {format.id === 'discord' && (
                   <p className="mt-3 text-center text-xs leading-5 text-slate-400">
                     La publicación en Discord estará disponible
-                    únicamente después de su aprobación.
+                    únicamente después de su aprobación. Este contenido
+                    incluye {discordFiles.length} archivo(s) adjunto(s).
                   </p>
                 )}
 
