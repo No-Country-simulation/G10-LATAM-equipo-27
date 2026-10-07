@@ -69,6 +69,27 @@ def crear_tabla() -> None:
                 conexion.execute(
                     f"ALTER TABLE interacciones ADD COLUMN {nombre} {tipo_sql}"
                 )
+        conexion.execute(
+            """
+            CREATE TABLE IF NOT EXISTS contenidos_generados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                interaccion_id INTEGER NOT NULL,
+                formato TEXT NOT NULL,
+                titulo TEXT NOT NULL,
+                contenido TEXT NOT NULL,
+                llamada_accion TEXT,
+                hashtags TEXT,
+                tono TEXT NOT NULL DEFAULT 'profesional',
+                estado TEXT NOT NULL DEFAULT 'pendiente_revision',
+                creado_en TEXT NOT NULL,
+                actualizado_en TEXT NOT NULL,
+                FOREIGN KEY (interaccion_id)
+                    REFERENCES interacciones(id)
+            )
+            """
+        )
+
+
         conexion.commit()
     finally:
         conexion.close()
@@ -248,5 +269,224 @@ def listar_interacciones(canal=None, estado=None, limite=100, desde_utc=None, ha
 
         filas = conexion.execute(consulta, parametros).fetchall()
         return [dict(fila) for fila in filas]
+    finally:
+        conexion.close()
+
+def obtener_interaccion(interaccion_id: int) -> dict | None:
+    """
+    Regresa una interacción específica por su ID.
+    Devuelve None si no existe.
+    """
+    conexion = sqlite3.connect(RUTA_BD)
+    conexion.row_factory = sqlite3.Row
+
+    try:
+        fila = conexion.execute(
+            """
+            SELECT
+                id, origen_comunidad, periodo_referencia,
+                autor, canal, tipo, texto, enviado_en, estado, creado_en,
+                guild_id, guild_name, channel_id, message_id, author_id,
+                relevancia, sentimiento, sentiment_score, temas_clave,
+                tema, segmento, razonamiento
+            FROM interacciones
+            WHERE id = ?
+            """,
+            (interaccion_id,),
+        ).fetchone()
+
+        return dict(fila) if fila else None
+
+    finally:
+        conexion.close()
+
+def guardar_contenido(
+    interaccion_id: int,
+    formato: str,
+    titulo: str,
+    contenido: str,
+    llamada_accion: str | None,
+    hashtags: list[str],
+    tono: str = "profesional",
+) -> int:
+    """
+    Guarda un borrador generado por IA y devuelve su ID.
+    """
+    conexion = sqlite3.connect(RUTA_BD)
+
+    try:
+        ahora = a_utc_iso(datetime.now(timezone.utc))
+
+        cursor = conexion.execute(
+            """
+            INSERT INTO contenidos_generados (
+                interaccion_id,
+                formato,
+                titulo,
+                contenido,
+                llamada_accion,
+                hashtags,
+                tono,
+                estado,
+                creado_en,
+                actualizado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente_revision', ?, ?)
+            """,
+            (
+                interaccion_id,
+                formato,
+                titulo,
+                contenido,
+                llamada_accion,
+                " ".join(hashtags),
+                tono,
+                ahora,
+                ahora,
+            ),
+        )
+
+        conexion.commit()
+        return cursor.lastrowid
+
+    finally:
+        conexion.close()
+
+def listar_contenidos(estado=None, limite=100) -> list:
+    """
+    Lista los contenidos generados, mostrando primero los más recientes.
+    """
+    conexion = sqlite3.connect(RUTA_BD)
+    conexion.row_factory = sqlite3.Row
+
+    try:
+        consulta = """
+            SELECT
+                id,
+                interaccion_id,
+                formato,
+                titulo,
+                contenido,
+                llamada_accion,
+                hashtags,
+                tono,
+                estado,
+                creado_en,
+                actualizado_en
+            FROM contenidos_generados
+        """
+
+        parametros = []
+
+        if estado:
+            consulta += " WHERE estado = ?"
+            parametros.append(estado)
+
+        consulta += " ORDER BY id DESC LIMIT ?"
+        parametros.append(limite)
+
+        filas = conexion.execute(consulta, parametros).fetchall()
+
+        resultados = []
+
+        for fila in filas:
+            item = dict(fila)
+
+            item["hashtags"] = (
+                item["hashtags"].split()
+                if item["hashtags"]
+                else []
+            )
+
+            resultados.append(item)
+
+        return resultados
+
+    finally:
+        conexion.close()
+
+def actualizar_estado_contenido(
+    contenido_id: int,
+    nuevo_estado: str,
+) -> bool:
+    """
+    Actualiza el estado de un contenido generado.
+    Devuelve True si el contenido existe y fue actualizado.
+    """
+    estados_validos = {
+        "pendiente_revision",
+        "aprobado",
+        "rechazado",
+    }
+
+    if nuevo_estado not in estados_validos:
+        raise ValueError("Estado de contenido no válido.")
+
+    conexion = sqlite3.connect(RUTA_BD)
+
+    try:
+        ahora = a_utc_iso(datetime.now(timezone.utc))
+
+        cursor = conexion.execute(
+            """
+            UPDATE contenidos_generados
+            SET estado = ?, actualizado_en = ?
+            WHERE id = ?
+            """,
+            (
+                nuevo_estado,
+                ahora,
+                contenido_id,
+            ),
+        )
+
+        conexion.commit()
+
+        return cursor.rowcount > 0
+
+    finally:
+        conexion.close()
+    
+def actualizar_contenido(
+    contenido_id: int,
+    titulo: str,
+    contenido: str,
+    llamada_accion: str,
+    hashtags: list[str],
+) -> bool:
+    """
+    Permite editar manualmente un borrador generado por IA.
+    """
+    conexion = sqlite3.connect(RUTA_BD)
+
+    try:
+        ahora = a_utc_iso(datetime.now(timezone.utc))
+
+        cursor = conexion.execute(
+            """
+            UPDATE contenidos_generados
+            SET
+                titulo = ?,
+                contenido = ?,
+                llamada_accion = ?,
+                hashtags = ?,
+                actualizado_en = ?
+            WHERE id = ?
+                AND estado = 'pendiente_revision'
+            """,
+            (
+                titulo,
+                contenido,
+                llamada_accion,
+                " ".join(hashtags),
+                ahora,
+                contenido_id,
+            ),
+        )
+
+        conexion.commit()
+
+        return cursor.rowcount > 0
+
     finally:
         conexion.close()
