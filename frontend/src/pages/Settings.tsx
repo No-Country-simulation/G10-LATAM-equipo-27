@@ -414,12 +414,12 @@ function Settings() {
             <div className="flex items-center justify-between rounded-lg bg-slate-50 p-4">
               <div>
                 <p className="text-sm font-medium text-slate-700">
-                  Analistas
+                  Community Managers
                 </p>
               </div>
 
               <span className="font-semibold text-slate-900">
-                {users.filter((user) => user.role === "analyst").length}
+                {users.filter((user) => user.role === "community_manager").length}
               </span>
             </div>
 

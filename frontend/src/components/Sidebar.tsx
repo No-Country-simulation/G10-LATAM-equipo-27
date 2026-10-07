@@ -51,9 +51,10 @@ function SidebarItem({ to, icon, label }: SidebarItemProps) {
 function Sidebar() {
     const navigate = useNavigate();
     const user = getUser();
+    const isCommunityManager = user?.role === "community_manager";
     const roleLabels: Record<string, string> = {
         admin: "Administrador",
-        analyst: "Analista",
+        community_manager: "Community Manager",
         reviewer: "Revisor",
     };
 
@@ -100,6 +101,48 @@ function Sidebar() {
                 </p>
 
                 <div className="space-y-2">
+
+                    {isCommunityManager ? (
+                        <>
+                            <SidebarItem
+                                to="/dashboard"
+                                icon={<Home size={18} />}
+                                label="Dashboard"
+                            />
+
+                            <SidebarItem
+                                to="/messages"
+                                icon={<MessageSquare size={18} />}
+                                label="Ingesta Discord"
+                            />
+
+                            <SidebarItem
+                                to="/analytics"
+                                icon={<BarChart3 size={18} />}
+                                label="Análisis"
+                            />
+
+                            <SidebarItem
+                                to="/content"
+                                icon={<WandSparkles size={18} />}
+                                label="Redacción de contenidos"
+                            />
+
+                            <SidebarItem
+                                to="/approvals"
+                                icon={<CheckCircle size={18} />}
+                                label="Aprobaciones"
+                            />
+
+                            <SidebarItem
+                                to="/oci-storage"
+                                icon={<CloudUpload size={18} />}
+                                label="Informes y Almacenamiento"
+                            />
+                        </>
+                    ) : (
+                        <>
+                    
 
                     <SidebarItem
                         to="/dashboard"
@@ -178,10 +221,14 @@ function Sidebar() {
                             />
                         </>
                     )}
+                            </>
+    )}
+
+</div>
 
                     
 
-                </div>
+                
 
                 {user?.role === "admin" && (
                     <>
@@ -220,34 +267,34 @@ function Sidebar() {
                 <span>Cerrar sesión</span>
             </button>
 
-            {/* Usuario */}
-            <div className="border-t border-slate-800 p-4">
-                <div className="flex items-center gap-3 rounded-lg p-2">
+            {/* Usuario */ }
+    <div className="border-t border-slate-800 p-4">
+        <div className="flex items-center gap-3 rounded-lg p-2">
 
-                    {/* Iniciales del usuario */}
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500 font-semibold">
-                        {user
-                            ? `${user.first_name?.charAt(0) ?? ""}${user.last_name?.charAt(0) ?? ""}`.toUpperCase()
-                            : "U"}
-                    </div>
-
-                    {/* Información del usuario */}
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                            {user
-                                ? `${user.first_name} ${user.last_name}`
-                                : "Usuario"}
-                        </p>
-
-                        <p className="truncate text-xs text-slate-400">
-                            {roleLabel}
-                        </p>
-                    </div>
-
-                </div>
+            {/* Iniciales del usuario */}
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500 font-semibold">
+                {user
+                    ? `${user.first_name?.charAt(0) ?? ""}${user.last_name?.charAt(0) ?? ""}`.toUpperCase()
+                    : "U"}
             </div>
 
-        </aside>
+            {/* Información del usuario */}
+            <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                    {user
+                        ? `${user.first_name} ${user.last_name}`
+                        : "Usuario"}
+                </p>
+
+                <p className="truncate text-xs text-slate-400">
+                    {roleLabel}
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+        </aside >
     )
 }
 

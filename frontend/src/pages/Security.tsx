@@ -50,7 +50,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
     last_name: "",
     username: "",
     password: "",
-    role: "analyst",
+    role: "community_manager",
   });
 const [creatingUser, setCreatingUser] = useState(false);
 
@@ -177,7 +177,7 @@ const [creatingUser, setCreatingUser] = useState(false);
         last_name: "",
         username: "",
         password: "",
-        role: "analyst",
+        role: "community_manager",
       });
 
 
@@ -525,9 +525,8 @@ const handleDeleteUser = async (
                 </th>
 
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Analista
+                  Community Manager
                 </th>
-
               </tr>
             </thead>
 
@@ -553,7 +552,7 @@ const handleDeleteUser = async (
 
               <tr className="border-b border-slate-100">
                 <td className="px-4 py-4 text-sm font-medium text-slate-700">
-                  Analizar comunidad
+                  Ingesta Discord
                 </td>
 
                 <td className="px-4 py-4 text-green-600">
@@ -583,7 +582,7 @@ const handleDeleteUser = async (
                 </td>
 
                 <td className="px-4 py-4 text-slate-300">
-                —
+                ✓
                 </td>
               </tr>
 
@@ -601,7 +600,24 @@ const handleDeleteUser = async (
                 </td>
 
                 <td className="px-4 py-4 text-slate-300">
+                  ✓
+                </td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="px-4 py-4 text-sm font-medium text-slate-700">
+                  Informes y Almacenamiento
+                </td>
+
+                <td className="px-4 py-4 text-green-600">
+                  ✓
+                </td>
+
+                <td className="px-4 py-4 text-slate-300">
                   —
+                </td>
+
+                <td className="px-4 py-4 text-green-600">
+                  ✓
                 </td>
               </tr>
 
@@ -760,8 +776,8 @@ const handleDeleteUser = async (
                 }
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-orange-400"
               >
-                <option value="analyst">
-                  Analista
+                <option value="community_manager">
+                  Community Manager
                 </option>
 
                 <option value="reviewer">
@@ -941,8 +957,8 @@ const handleDeleteUser = async (
                         Administrador
                       </option>
 
-                      <option value="analyst">
-                        Analista
+                      <option value="community_manager">
+                        Community Manager
                       </option>
 
                       <option value="reviewer">

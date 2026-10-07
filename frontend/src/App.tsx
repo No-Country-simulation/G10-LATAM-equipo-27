@@ -45,19 +45,12 @@ function App() {
                 {/* Rutas protegidas: cualquier usuario autenticado */}
                 <Route element={<ProtectedRoute />}>
 
+                  {/* Dashboard e Ingesta: todos los usuarios autenticados */}
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/messages" element={<Messages />} />
-                  <Route path="/highlights" element={<Highlights />} />
-                  <Route path="/hashtags" element={<Hashtags />} />
-                  <Route path="/audience" element={<Audience />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/calendar" element={<Calendar />} />
-                  <Route path="/export" element={<Export />} />
-                  <Route path="/my-reports" element={<MyReports />} />
-                  
 
-                  {/* Administrador y revisor */}
+                  {/* Módulos de análisis: administrador y revisor */}
                   <Route
                     element={
                       <RoleProtectedRoute
@@ -65,8 +58,79 @@ function App() {
                       />
                     }
                   >
+                    <Route path="/highlights" element={<Highlights />} />
+                    <Route path="/hashtags" element={<Hashtags />} />
+                    <Route path="/audience" element={<Audience />} />
+                    
+                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/export" element={<Export />} />
+                    <Route path="/my-reports" element={<MyReports />} />
+                  </Route>
+
+                  {/* Análisis */}
+                  <Route
+                    element={
+                      <RoleProtectedRoute
+                        allowedRoles={["admin", "reviewer", "community_manager"]}
+                      />
+                    }
+                  >
+                    <Route path="/analytics" element={<Analytics />} />
+                  </Route>
+
+                  {/* Otros módulos de análisis: administrador y revisor */}
+                  <Route
+                    element={
+                      <RoleProtectedRoute
+                        allowedRoles={["admin", "reviewer"]}
+                      />
+                    }
+                  >
+                    <Route path="/highlights" element={<Highlights />} />
+                    <Route path="/hashtags" element={<Hashtags />} />
+                    <Route path="/audience" element={<Audience />} />
+                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/export" element={<Export />} />
+                    <Route path="/my-reports" element={<MyReports />} />
+                  </Route>
+
+
+
+                  {/* Flujo de contenidos */}
+                  <Route
+                    element={
+                      <RoleProtectedRoute
+                        allowedRoles={["admin", "reviewer", "community_manager"]}
+                      />
+                    }
+                  >
                     <Route path="/content" element={<ContentStudio />} />
                     <Route path="/approvals" element={<Approvals />} />
+                  </Route>
+                  
+
+                  {/* Flujo de contenidos */}
+                  <Route
+                    element={
+                      <RoleProtectedRoute
+                        allowedRoles={["admin", "reviewer", "community_manager"]}
+                      />
+                    }
+                  >
+                    <Route path="/content" element={<ContentStudio />} />
+                    <Route path="/approvals" element={<Approvals />} />
+                  </Route>
+
+                  {/* Solo administrador */}
+                  {/* Informes y Almacenamiento */}
+                  <Route
+                    element={
+                      <RoleProtectedRoute
+                        allowedRoles={["admin", "community_manager"]}
+                      />
+                    }
+                  >
+                    <Route path="/oci-storage" element={<OCIStorage />} />
                   </Route>
 
                   {/* Solo administrador */}
@@ -78,7 +142,6 @@ function App() {
                     <Route path="/audit" element={<Audit />} />
                     <Route path="/security" element={<Security />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/oci-storage" element={<OCIStorage />} />
                   </Route>
 
                   <Route
