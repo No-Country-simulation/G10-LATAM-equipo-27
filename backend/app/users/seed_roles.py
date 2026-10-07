@@ -9,8 +9,8 @@ INITIAL_ROLES = [
         "description": "Administración de CommunityLab"
     },
     {
-        "name": "analyst",
-        "description": "Consulta y análisis de la comunidad"
+    "name": "community_manager",
+    "description": "Gestión de comunidad, contenidos, aprobaciones e informes"
     },
     {
         "name": "reviewer",

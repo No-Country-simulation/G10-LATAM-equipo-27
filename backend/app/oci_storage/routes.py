@@ -20,7 +20,9 @@ router = APIRouter(
 
 @router.get("/status")
 def get_oci_storage_status(
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(
+        require_role("admin", "community_manager")
+    )
 ):
     return {
         "status": "ready",
@@ -33,7 +35,10 @@ def get_oci_storage_status(
     response_model=WeeklyPeriod
 )
 def get_weekly_period(
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(
+        require_role("admin", "community_manager")
+    )
+
 ):
     return get_previous_week_period()
 
@@ -41,7 +46,9 @@ def get_weekly_period(
 @router.post("/weekly-sync")
 def start_weekly_sync(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(
+        require_role("admin", "community_manager")
+    )
 ):
     period = get_previous_week_period()
 

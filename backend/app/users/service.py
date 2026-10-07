@@ -23,7 +23,7 @@ def create_user(db: Session, user_data: UserCreate):
         )
 
     # Solo permitimos estos roles al crear usuarios
-    allowed_roles = ["analyst", "reviewer"]
+    allowed_roles = ["community_manager", "reviewer"]
 
     if user_data.role not in allowed_roles:
         raise HTTPException(
