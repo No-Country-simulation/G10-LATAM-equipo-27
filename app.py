@@ -178,3 +178,45 @@ else:
     st.info("Aún no se ha generado el archivo de resultados. Ejecuta el análisis en el paso 2.")
 
 
+st.divider()
+
+# --- 4. ANUNCIOS PARA DISCORD (desde archivo) ---
+st.header("4. Anuncios para Discord")
+st.markdown("Sube un borrador en **.txt** o **.md**. La IA lo reescribe con la voz de marca de CloudEDTech; revísalo, edítalo y publícalo en el canal de anuncios.")
+
+from anuncios_discord import (
+    leer_archivo, generar_anuncio, publicar_en_discord,
+    EXTENSIONES_PERMITIDAS, LIMITE_DISCORD,
+)
+
+archivo_anuncio = st.file_uploader("📄 Sube tu archivo", type=EXTENSIONES_PERMITIDAS, key="archivo_anuncio")
+
+if archivo_anuncio is not None:
+    borrador = leer_archivo(archivo_anuncio.getvalue())
+    with st.expander("Ver borrador original"):
+        st.text(borrador)
+
+    if st.button("✨ Generar anuncio con IA", key="generar_anuncio"):
+        if not os.environ.get("GOOGLE_API_KEY"):
+            st.error("⚠️ Falta la GOOGLE_API_KEY en el archivo .env")
+        else:
+            with st.spinner("Redactando el anuncio con la voz de marca..."):
+                try:
+                    st.session_state["anuncio_texto"] = generar_anuncio(borrador)
+                except Exception as e:
+                    st.error(f"Error al generar el anuncio: {e}")
+
+if "anuncio_texto" in st.session_state:
+    texto_final = st.text_area(
+        "✏️ Revisa o edita el anuncio antes de publicarlo:",
+        key="anuncio_texto",
+        height=250,
+    )
+    st.caption(f"{len(texto_final)} / {LIMITE_DISCORD} caracteres")
+
+    if st.button("📢 Publicar en Discord", type="primary", key="publicar_anuncio"):
+        try:
+            publicar_en_discord(texto_final)
+            st.success("✅ Anuncio publicado en el canal de anuncios de Discord.")
+        except Exception as e:
+            st.error(f"❌ No se pudo publicar: {e}")
