@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from app.content_workflow.routes import router as content_workflow_router
 from app.audit.routes import router as audit_router
 from app.database.connection import test_database_connection
 from app.database.session import SessionLocal, engine
@@ -76,6 +77,7 @@ app.include_router(audit_router)
 
 # Datos provenientes de Discord / Community Analytics
 app.include_router(community_router)
+app.include_router(content_workflow_router)
 
 
 @app.get("/")
