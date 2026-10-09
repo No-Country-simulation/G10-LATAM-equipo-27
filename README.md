@@ -1,59 +1,37 @@
-📝 Minuta de Reunión - Sincronización del Equipo
+# 📝 Minuta de Reunión - 08 de Octubre
 
-📅 Información General
+## 📌 Estado General del Proyecto
+- El proyecto se encuentra a aproximadamente dos semanas de su conclusión, entrando en la fase final de integración.
+- **Acuerdo de IA:** La arquitectura requerirá intervención humana para evaluar los resultados y evitar depender al 100% de la automatización.
+- **Organización:** Patricia está brindando apoyo organizativo (roles de Product Owner / Scrum Master) basándose en su experiencia en hackatones.
+- ⚠️ **CRÍTICO:** Está estrictamente prohibido intentar iniciar sesión en el correo central del equipo. Está suspendido y cualquier intento podría bloquearlo permanentemente.
 
-Fecha de la reunión: Jueves, 08 de Octubre
+## 🖥️ Interfaz de Usuario (Frontend)
+- Se aprobó utilizar la maqueta de interfaz desarrollada por Andrés (ya incluye el logotipo y está en GitHub).
+- La interfaz contará con 3 botones principales de gestión: **Editar, Rechazar y Publicar**.
+- El botón de "Publicar" aprobará el post, lo enviará a las redes (ej. LinkedIn) y guardará el registro en la base de datos para el reporte semanal de OCI.
+- *Nota a futuro:* Se evaluará agregar filtros por fecha y canal para la lectura de mensajes más adelante.
 
-Próxima reunión: Lunes, 12 de Octubre
+## ⚙️ Integración de Código y Repositorio (GitHub)
+- La rama `main` actualmente unifica la extracción de mensajes de Discord (código de Eduardo) y la generación de JSON a través del "Cerebro" de IA.
+- Queda pendiente integrar a `main` los módulos de Copywriting (Enoch) y el Frontend (Andrés y Tania).
+- **Fernando** apoyará en la unificación de las ramas restantes hacia la rama `main`.
+- **Limpieza de Repositorio:** Se eliminará el archivo `Codigo_con_imports.ipynb` de las ramas principales, ya que el equipo migrará el flujo de Colab a entornos locales.
 
-Objetivo principal: Avances en integración final, revisión de ramas en GitHub y preparativos para el despliegue en OCI.
+## ☁️ Despliegue en la Nube (OCI)
+- Cristian será el encargado de realizar el despliegue final en Oracle Cloud Infrastructure (OCI).
+- La instalación de dependencias en OCI se realizará a través del archivo `requirements.txt`.
+- Fernando enviará por mensaje privado las llaves de acceso (API Keys) a Cristian para configurar el entorno de producción y reemplazar los bots de prueba.
 
-🚀 Estado General del Proyecto
+## ✅ Tareas Asignadas (Sprint)
+- [ ] **Fernando, Francisco y Samuel:** Redactar los resúmenes del Sprint en el Drive proporcionado por Alonso.
+- [ ] **Andrés:** Documentar las librerías e instrucciones en el archivo `README.md` de su rama antes de realizar la fusión (merge).
+- [ ] **Fernando:** Consolidar y compartir API Keys con Cristian.
+- [ ] **Equipo Core (Fernando/Andrés/Eduardo):** Unificar el código restante hacia la rama `main` en entorno local.
 
-Nos encontramos a dos semanas de la conclusión del proyecto, entrando oficialmente en la fase final de integración.
-
-Validación Humana: Se acordó que la arquitectura de IA requerirá siempre intervención humana para evaluar los resultados (aprobar/rechazar) y evitar depender al 100% de la automatización ciega.
-
-Organización: Patricia está brindando apoyo organizativo asumiendo roles de Product Owner / Scrum Master, aprovechando su experiencia en metodologías ágiles y hackatones.
-
-⚠️ Aviso Crítico (Correo Central): Queda estrictamente prohibido intentar iniciar sesión en el correo central del equipo. Actualmente está suspendido por Google y cualquier intento de acceso podría bloquearlo permanentemente.
-
-💻 Interfaz de Usuario (Frontend)
-
-Maqueta Aprobada: El equipo aprobó de forma unánime utilizar la maqueta desarrollada por Andrés, la cual ya incluye el logotipo, el diseño base y está subida a GitHub.
-
-Gestión de Publicaciones: La interfaz contará con tres botones principales de curaduría: Editar, Rechazar y Publicar.
-
-Flujo del Botón 'Publicar': Al dar clic, este funcionará simultáneamente como aprobación, enviando la publicación a las redes sociales y guardando el registro en la base de datos para el reporte semanal de OCI.
-
-Futuras Mejoras: Se planteó la posibilidad de agregar filtros por fecha y canal para la lectura de mensajes más adelante; por el momento se mantendrá la versión base para agilizar la entrega.
-
-🔀 Integración de Código y Repositorio (GitHub)
-
-Estado de la rama main: Actualmente unifica con éxito la extracción de mensajes desde Discord (Eduardo) y la generación de archivos JSON a través del "Cerebro" de IA.
-
-Pendientes de Integración: Falta fusionar a la rama main los módulos de Copywriting (Enoch) y el Frontend unificado (Andrés y Tania).
-
-Responsable de Unificación: Fernando apoyará como encargado técnico en la unificación de las ramas restantes hacia la rama main.
-
-Limpieza de Repositorio: Se acordó eliminar el archivo Codigo_con_imports.ipynb de las ramas principales, ya que el equipo migrará el flujo de trabajo de Google Colab hacia entornos locales (Streamlit).
-
-Documentación: Se solicitó a Andrés documentar las dependencias e instrucciones en el archivo README.md de su rama individual antes de proceder con la fusión a main.
-
-☁️ Despliegue en la Nube (OCI)
-
-Responsable: Cristian será el encargado principal de realizar el despliegue final de la aplicación en Oracle Cloud Infrastructure (OCI).
-
-Ejecución: El despliegue en OCI se realizará automatizando las instalaciones a través del archivo de dependencias requirements.txt.
-
-Credenciales: Fernando consolidará y enviará por mensaje privado las llaves de acceso (API Keys) a Cristian para configurar de forma segura el entorno de producción y reemplazar los bots temporales de prueba.
-
-📋 Próximos Pasos y Tareas Asignadas (Sprint Actual)
-
-[ ] Fernando: Unificar ramas restantes hacia main y enviar las API Keys de los modelos a Cristian.
-
-[ ] Cristian: Preparar el entorno en OCI para recibir el despliegue final.
-
-[ ] Andrés: Actualizar el README.md de su rama frontend con instrucciones y librerías necesarias.
+## 📅 Próxima Reunión
+- **Fecha:** Lunes, 12 de Octubre
+- **Hora:** 6:00 PM - 7:00 PM (Hora de México)
+- **Objetivo principal:** Confirmar la integración del código restante en la rama `main` y definir los últimos pasos para el despliegue.
 
 [ ] Fernando, Francisco y Samuel: Redactar los resúmenes correspondientes del Sprint en el Drive de Alonso.
