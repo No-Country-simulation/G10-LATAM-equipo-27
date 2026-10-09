@@ -4,7 +4,6 @@ import {
   Copy,
   FileText,
   MessageCircle,
-  Newspaper,
   Pencil,
   RotateCcw,
   Send,
@@ -15,7 +14,7 @@ import { useState } from 'react'
 
 import { mockCommunityData } from '../data/mockCommunityData'
 
-type ContentFormat = 'linkedin' | 'newsletter' | 'discord'
+type ContentFormat = 'linkedin' | 'x' | 'discord'
 
 type DraftState = {
   content: string
@@ -104,16 +103,12 @@ function ContentStudio() {
       submitted: false,
     },
 
-    newsletter: {
-      content: `Boletín CloudEdTech
-
-Una experiencia compartida por nuestra comunidad demuestra cómo el aprendizaje práctico puede convertirse en resultados reales.
+    x: {
+      content: `💬 Desde nuestra comunidad:
 
 ${selectedStory.message}
 
-Desde CloudEdTech seguimos destacando experiencias que aportan valor, conocimiento y nuevas oportunidades para nuestra comunidad.
-
-#CloudEdTech #Comunidad #Aprendizaje`,
+#CloudEdTech`,
       submitted: false,
     },
 
@@ -191,16 +186,12 @@ Esta experiencia refleja cómo el aprendizaje compartido puede generar nuevas op
         submitted: false,
       },
 
-      newsletter: {
-        content: `Boletín CloudEdTech
-
-Una experiencia compartida por nuestra comunidad demuestra cómo el aprendizaje práctico puede convertirse en resultados reales.
+      x: {
+        content: `💬 Desde nuestra comunidad:
 
 ${story.message}
 
-Desde CloudEdTech seguimos destacando experiencias que aportan valor, conocimiento y nuevas oportunidades para nuestra comunidad.
-
-#CloudEdTech #Comunidad #Aprendizaje`,
+#CloudEdTech`,
         submitted: false,
       },
 
@@ -230,10 +221,10 @@ ${story.message}
         icon: BriefcaseBusiness,
       },
       {
-        id: 'newsletter',
-        name: 'Newsletter',
-        description: 'Contenido editorial',
-        icon: Newspaper,
+        id: 'x',
+        name: 'X',
+        description: 'Publicación breve para X',
+        icon: MessageCircle,
       },
       {
         id: 'discord',
@@ -463,6 +454,17 @@ ${story.message}
                   }
                   className="mt-3 min-h-72 flex-1 resize-y rounded-xl border border-slate-200 p-4 text-sm leading-6 text-slate-700 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-500"
                 />
+                {format.id === 'x' && (
+                  <p
+                    className={`mt-2 text-right text-xs font-semibold ${
+                      [...draft.content].length > 280
+                        ? 'text-rose-600'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    {[...draft.content].length} / 280 caracteres
+                  </p>
+                )}
                 {format.id === 'discord' && (
                   <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -558,7 +560,7 @@ ${story.message}
                 <button
                   type="button"
                   onClick={() => handleSubmit(format.id)}
-                  disabled={draft.submitted}
+                  disabled={draft.submitted || (format.id === 'x' && [...draft.content].length > 280)}
                   className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${draft.submitted
                     ? 'cursor-not-allowed bg-green-50 text-green-700'
                     : 'bg-orange-500 text-white hover:bg-orange-600'
@@ -917,7 +919,7 @@ ${story.message}
             <p className="mt-1 text-sm leading-6 text-slate-600">
               El contenido generado aquí no se publica
               automáticamente. Primero debe enviarse al módulo de
-              Aprobaciones. Los contenidos de LinkedIn y Newsletter
+              Aprobaciones. Los contenidos de LinkedIn y X
               podrán copiarse después de ser aprobados, mientras que
               Discord podrá publicarse mediante la integración del
               bot.
