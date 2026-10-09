@@ -18,5 +18,5 @@ Memoria del proyecto entre sesiones. Máximo ~50 líneas: resume o elimina lo qu
 
 ## Próximos pasos
 - [x] Aprovechar el nuevo parámetro `desde` y `hasta` en `obtener_json()` para añadir un selector de fechas visual en la pantalla de Streamlit. (Implementado vía flujo SDD)
+- [x] Levantar un servidor FastAPI (`api.py`) para consumir el JSON desde el Frontend (Integración Iterativa).
 - [ ] Probar anuncios con la GOOGLE_API_KEY real y el webhook del servidor de pruebas.
-- [ ] Validar con el equipo de Frontend si el formato JSON consumido vía Streamlit es suficiente o si se requiere levantar un servidor FastAPI en el futuro.
