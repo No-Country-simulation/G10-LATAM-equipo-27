@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sqlite3
 from datetime import datetime, timezone
 
@@ -73,7 +73,7 @@ def crear_tabla() -> None:
             """
             CREATE TABLE IF NOT EXISTS contenidos_generados (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                interaccion_id INTEGER NOT NULL,
+                interaccion_id INTEGER,
                 formato TEXT NOT NULL,
                 titulo TEXT NOT NULL,
                 contenido TEXT NOT NULL,
@@ -89,6 +89,30 @@ def crear_tabla() -> None:
             """
         )
 
+
+        columnas_contenido = {
+            fila[1]
+            for fila in conexion.execute(
+                "PRAGMA table_info(contenidos_generados)"
+            ).fetchall()
+        }
+
+        nuevas_columnas_contenido = {
+            "plataforma": "TEXT",
+            "tipo_contenido": "TEXT NOT NULL DEFAULT 'publicacion'",
+            "observaciones_revision": "TEXT",
+            "version": "INTEGER NOT NULL DEFAULT 1",
+            "estado_publicacion": "TEXT NOT NULL DEFAULT 'no_publicado'",
+            "publicado_en": "TEXT",
+            "source_channel_id": "TEXT",
+            "source_message_id": "TEXT",
+        }
+
+        for nombre, tipo_sql in nuevas_columnas_contenido.items():
+            if nombre not in columnas_contenido:
+                conexion.execute(
+                    f"ALTER TABLE contenidos_generados ADD COLUMN {nombre} {tipo_sql}"
+                )
 
         conexion.commit()
     finally:
@@ -301,13 +325,15 @@ def obtener_interaccion(interaccion_id: int) -> dict | None:
         conexion.close()
 
 def guardar_contenido(
-    interaccion_id: int,
+    interaccion_id: int | None,
     formato: str,
     titulo: str,
     contenido: str,
     llamada_accion: str | None,
     hashtags: list[str],
     tono: str = "profesional",
+    plataforma: str | None = None,
+    tipo_contenido: str = "publicacion",
 ) -> int:
     """
     Guarda un borrador generado por IA y devuelve su ID.
@@ -327,11 +353,13 @@ def guardar_contenido(
                 llamada_accion,
                 hashtags,
                 tono,
+                plataforma,
+                tipo_contenido,
                 estado,
                 creado_en,
                 actualizado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente_revision', ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente_revision', ?, ?)
             """,
             (
                 interaccion_id,
@@ -341,6 +369,8 @@ def guardar_contenido(
                 llamada_accion,
                 " ".join(hashtags),
                 tono,
+                plataforma,
+                tipo_contenido,
                 ahora,
                 ahora,
             ),
@@ -372,7 +402,15 @@ def listar_contenidos(estado=None, limite=100) -> list:
                 tono,
                 estado,
                 creado_en,
-                actualizado_en
+                actualizado_en,
+                plataforma,
+                tipo_contenido,
+                observaciones_revision,
+                version,
+                estado_publicacion,
+                publicado_en,
+                source_channel_id,
+                source_message_id
             FROM contenidos_generados
         """
 
@@ -408,45 +446,104 @@ def listar_contenidos(estado=None, limite=100) -> list:
 def actualizar_estado_contenido(
     contenido_id: int,
     nuevo_estado: str,
+    observaciones_revision: str | None = None,
 ) -> bool:
     """
-    Actualiza el estado de un contenido generado.
-    Devuelve True si el contenido existe y fue actualizado.
+    Cambia el estado solo si la transicion esta permitida.
+    Guarda las observaciones del revisor.
     """
+    transiciones = {
+        "pendiente_revision": {
+            "aprobado",
+            "rechazado",
+            "ajustes_solicitados",
+        },
+        "ajustes_solicitados": {
+            "pendiente_revision",
+        },
+    }
+
     estados_validos = {
         "pendiente_revision",
         "aprobado",
         "rechazado",
+        "ajustes_solicitados",
     }
 
     if nuevo_estado not in estados_validos:
-        raise ValueError("Estado de contenido no válido.")
+        raise ValueError("Estado de contenido no valido.")
 
-    conexion = sqlite3.connect(RUTA_BD)
+    observaciones = (
+        observaciones_revision.strip()
+        if observaciones_revision is not None
+        else None
+    )
+
+    if nuevo_estado == "ajustes_solicitados" and not observaciones:
+        raise ValueError(
+            "Debe indicar las observaciones para solicitar ajustes."
+        )
+
+    conexion = sqlite3.connect(RUTA_BD, timeout=10)
 
     try:
+        conexion.execute("BEGIN IMMEDIATE")
+
+        fila = conexion.execute(
+            "SELECT estado FROM contenidos_generados WHERE id = ?",
+            (contenido_id,),
+        ).fetchone()
+
+        if fila is None:
+            conexion.rollback()
+            return False
+
+        estado_actual = fila[0]
+
+        if nuevo_estado not in transiciones.get(estado_actual, set()):
+            conexion.rollback()
+            raise ValueError(
+                f"Transicion no permitida: "
+                f"{estado_actual} -> {nuevo_estado}"
+            )
+
         ahora = a_utc_iso(datetime.now(timezone.utc))
 
         cursor = conexion.execute(
             """
             UPDATE contenidos_generados
-            SET estado = ?, actualizado_en = ?
-            WHERE id = ?
+            SET
+                estado = ?,
+                observaciones_revision = ?,
+                actualizado_en = ?
+            WHERE id = ? AND estado = ?
             """,
             (
                 nuevo_estado,
+                observaciones,
                 ahora,
                 contenido_id,
+                estado_actual,
             ),
         )
 
-        conexion.commit()
+        if cursor.rowcount != 1:
+            conexion.rollback()
+            raise RuntimeError(
+                "No fue posible confirmar la actualizacion."
+            )
 
-        return cursor.rowcount > 0
+        conexion.commit()
+        return True
+
+    except Exception:
+        conexion.rollback()
+        raise
 
     finally:
         conexion.close()
-    
+
+
 def actualizar_contenido(
     contenido_id: int,
     titulo: str,
