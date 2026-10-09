@@ -33,5 +33,3 @@
 - **Fecha:** Lunes, 12 de Octubre
 - **Hora:** 6:00 PM - 7:00 PM (Hora de México)
 - **Objetivo principal:** Confirmar la integración del código restante en la rama `main` y definir los últimos pasos para el despliegue.
-
-[ ] Fernando, Francisco y Samuel: Redactar los resúmenes correspondientes del Sprint en el Drive de Alonso.
