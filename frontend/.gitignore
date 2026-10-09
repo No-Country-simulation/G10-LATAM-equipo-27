@@ -26,3 +26,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Respaldos temporales de desarrollo
+*.bak-paso*

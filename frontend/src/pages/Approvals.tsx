@@ -1,99 +1,110 @@
-import {
-    AlertCircle,
-    Check,
-    CheckCircle2,
-    Clock,
-    MessageCircle,
-    ShieldCheck,
-    X,
-    XCircle,
-} from 'lucide-react'
-import { useState } from 'react'
-import { mockCommunityData } from '../data/mockCommunityData'
-
-type ReviewFilter = 'pending' | 'approved' | 'rejected'
+import { CheckCircle2, ShieldCheck, RefreshCcw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { getMotorContents } from '../api/motorContent'
+import { reviewContent, type ContentReviewStatus } from '../api/contentReview'
+import MotorApprovalCard from '../components/MotorApprovalCard'
+import MotorApprovalSummary from '../components/MotorApprovalSummary'
+import MotorApprovalFilters, { type MotorReviewFilter } from '../components/MotorApprovalFilters'
+import { groupMotorApprovals, type MotorApprovalGroups } from '../api/motorApprovalGroups'
 
 function Approvals() {
-    const approvalsData = mockCommunityData.approvals
-    const approvalsSummary = approvalsData.summary
+    const [motorActiveFilter, setMotorActiveFilter] =
+        useState<MotorReviewFilter>('pending')
 
-    const [approvalItems, setApprovalItems] = useState(
-        approvalsData.items
-    )
+    const [motorGroups, setMotorGroups] = useState<MotorApprovalGroups | null>(null)
+    const [motorLoading, setMotorLoading] = useState(false)
+    const [motorError, setMotorError] = useState<string | null>(null)
 
-    const [approvedItems, setApprovedItems] = useState<
-        typeof approvalsData.items
-    >([])
+    const [reloadKey, setReloadKey] = useState(0)
+    const [reviewingId, setReviewingId] = useState<number | null>(null)
+    const [reviewMessage, setReviewMessage] = useState<string | null>(null)
 
-    const [rejectedItems, setRejectedItems] = useState<
-        typeof approvalsData.items
-    >([])
+    useEffect(() => {
+        const controller = new AbortController()
 
-    const [approvedCount, setApprovedCount] = useState(
-        approvalsSummary.approved_today
-    )
+        async function loadMotorApprovals() {
+            setMotorLoading(true)
+            setMotorError(null)
 
-    const [rejectedCount, setRejectedCount] = useState(
-        approvalsSummary.rejected
-    )
+            try {
+                const contents = await getMotorContents(controller.signal)
 
-    const [activeFilter, setActiveFilter] =
-        useState<ReviewFilter>('pending')
+                if (!controller.signal.aborted) {
+                    setMotorGroups(groupMotorApprovals(contents))
+                }
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    setMotorError(
+                        error instanceof Error
+                            ? error.message
+                            : 'No fue posible consultar el Motor IA'
+                    )
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setMotorLoading(false)
+                }
+            }
+        }
 
-    const handleApprove = (itemId: number) => {
-        const item = approvalItems.find(
-            (currentItem) => currentItem.id === itemId
-        )
+        void loadMotorApprovals()
 
-        if (!item) return
+        return () => {
+            controller.abort()
+        }
+    }, [reloadKey])
 
-        setApprovalItems((currentItems) =>
-            currentItems.filter(
-                (currentItem) => currentItem.id !== itemId
+    async function handleReview(
+        contentId: number,
+        estado: ContentReviewStatus,
+    ) {
+        if (reviewingId !== null) return
+
+        let observaciones_revision: string | null = null
+
+        if (estado === 'ajustes_solicitados') {
+            const respuesta = window.prompt(
+                'Indica los ajustes que debe realizar el redactor:'
             )
-        )
 
-        setApprovedItems((currentItems) => [
-            {
-                ...item,
-                status_label: 'Aprobado',
-            },
-            ...currentItems,
-        ])
+            if (respuesta === null) return
 
-        setApprovedCount((currentCount) => currentCount + 1)
-    }
+            observaciones_revision = respuesta.trim()
 
-    const handleReject = (itemId: number) => {
-        const item = approvalItems.find(
-            (currentItem) => currentItem.id === itemId
-        )
+            if (!observaciones_revision) {
+                setReviewMessage('Debes indicar las observaciones.')
+                return
+            }
+        } else {
+            const accion = estado === 'aprobado' ? 'aprobar' : 'rechazar'
+            if (!window.confirm(
+                `?Confirmas que deseas ${accion} el contenido #${contentId}?`
+            )) return
+        }
 
-        if (!item) return
+        setReviewingId(contentId)
+        setReviewMessage(null)
 
-        setApprovalItems((currentItems) =>
-            currentItems.filter(
-                (currentItem) => currentItem.id !== itemId
+        try {
+            await reviewContent(contentId, {
+                estado,
+                observaciones_revision,
+            })
+
+            setReviewMessage(
+                `Contenido #${contentId}: revisi?n guardada correctamente.`
             )
-        )
-
-        setRejectedItems((currentItems) => [
-            {
-                ...item,
-                status_label: 'Requiere ajustes',
-            },
-            ...currentItems,
-        ])
-
-        setRejectedCount((currentCount) => currentCount + 1)
+            setReloadKey((actual) => actual + 1)
+        } catch (error) {
+            setReviewMessage(
+                error instanceof Error
+                    ? error.message
+                    : 'No fue posible guardar la revisi?n.'
+            )
+        } finally {
+            setReviewingId(null)
+        }
     }
-
-    const visibleItems =
-        activeFilter === 'pending'
-            ? approvalItems
-            : activeFilter === 'approved'
-              ? approvedItems
-              : rejectedItems
 
     return (
         <div className="space-y-8">
@@ -116,50 +127,76 @@ function Approvals() {
                     </div>
                 </div>
 
-                <div className="flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                    <ShieldCheck size={14} />
-                    Control humano activo
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        type="button"
+                        disabled={motorLoading || reviewingId !== null}
+                        onClick={() => setReloadKey((actual) => actual + 1)}
+                        title="Actualizar contenidos e indicadores del Motor IA"
+                        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                        <RefreshCcw size={16} />
+                        Recuperar mensajes
+                    </button>
+
+                    <div className="flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                        <ShieldCheck size={14} />
+                        Control humano activo
+                    </div>
                 </div>
             </div>
 
-            {/* RESUMEN */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <SummaryCard
-                    title="Pendientes"
-                    value={approvalItems.length}
-                    helper="Esperando revisión humana"
-                    icon={
-                        <Clock
-                            size={19}
-                            className="text-amber-600"
-                        />
-                    }
-                />
+            {reviewMessage && (
+                <div role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                    {reviewMessage}
+                </div>
+            )}
 
-                <SummaryCard
-                    title="Aprobados hoy"
-                    value={approvedCount}
-                    helper="Contenidos validados"
-                    icon={
-                        <CheckCircle2
-                            size={19}
-                            className="text-emerald-600"
-                        />
-                    }
-                />
+            {/* ESTADO DE CONEXION CON MOTOR IA */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-800">
+                    Conexión con Motor IA
+                </p>
 
-                <SummaryCard
-                    title="Requieren ajustes"
-                    value={rejectedCount}
-                    helper="Devueltos para revisión"
-                    icon={
-                        <AlertCircle
-                            size={19}
-                            className="text-red-500"
-                        />
-                    }
-                />
+                {motorLoading && (
+                    <p className="mt-2 text-sm text-slate-500">
+                        Consultando contenidos reales...
+                    </p>
+                )}
+
+                {motorError && (
+                    <p className="mt-2 text-sm text-red-600">
+                        Error de conexi?n: {motorError}
+                    </p>
+                )}
+
+                {!motorLoading && !motorError && motorGroups && (
+                    <div className="mt-2 space-y-1 text-sm text-slate-600">
+                        <p>Pendientes: {motorGroups.pending.length}</p>
+                        <p>Aprobados: {motorGroups.approved.length}</p>
+                        <p>Requieren ajustes: {motorGroups.adjustments.length}</p>
+                        <p>Rechazados: {motorGroups.rejected.length}</p>
+                        <p>Otros estados: {motorGroups.other.length}</p>
+                    </div>
+                )}
             </div>
+
+            {/* RESUMEN REAL DEL MOTOR IA */}
+            {motorLoading && (
+                <p className="text-sm text-slate-500">
+                    Cargando indicadores reales...
+                </p>
+            )}
+
+            {motorError && (
+                <p className="text-sm text-red-600">
+                    Indicadores no disponibles: {motorError}
+                </p>
+            )}
+
+            {!motorLoading && !motorError && motorGroups && (
+                <MotorApprovalSummary groups={motorGroups} />
+            )}
 
             {/* FLUJO */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -195,173 +232,58 @@ function Approvals() {
                 </div>
             </div>
 
-            {/* FILTROS */}
-            <div className="flex flex-wrap gap-2">
-                <FilterButton
-                    active={activeFilter === 'pending'}
-                    onClick={() => setActiveFilter('pending')}
-                >
-                    Pendientes ({approvalItems.length})
-                </FilterButton>
+            {/* FILTROS REALES DEL MOTOR IA */}
+            {!motorLoading && !motorError && motorGroups && (
+                <MotorApprovalFilters
+                    groups={motorGroups}
+                    activeFilter={motorActiveFilter}
+                    onChange={setMotorActiveFilter}
+                />
+            )}
 
-                <FilterButton
-                    active={activeFilter === 'approved'}
-                    onClick={() => setActiveFilter('approved')}
-                >
-                    Aprobados en esta sesión ({approvedItems.length})
-                </FilterButton>
+            {/* CONTENIDOS REALES DEL MOTOR IA */}
+            <section className="space-y-4">
+                <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                        Contenidos reales del Motor IA
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Registros del Motor IA con revisi?n humana habilitada.
+                    </p>
+                </div>
 
-                <FilterButton
-                    active={activeFilter === 'rejected'}
-                    onClick={() => setActiveFilter('rejected')}
-                >
-                    Requieren ajustes ({rejectedItems.length})
-                </FilterButton>
-            </div>
-
-            {/* LISTA */}
-            <div className="space-y-5">
-                {visibleItems.length === 0 && (
-                    <EmptyState filter={activeFilter} />
+                {motorLoading && (
+                    <p className="text-sm text-slate-500">
+                        Cargando contenidos...
+                    </p>
                 )}
 
-                {visibleItems.map((item) => {
-                    const isApproved =
-                        activeFilter === 'approved'
+                {motorError && (
+                    <p className="text-sm text-red-600">
+                        No fue posible cargar los contenidos reales.
+                    </p>
+                )}
 
-                    const isRejected =
-                        activeFilter === 'rejected'
+                {!motorLoading && !motorError && motorGroups && (
+                    <>
+                        {motorGroups[motorActiveFilter].length === 0 && (
+                            <p className="text-sm text-slate-500">
+                                No hay contenidos registrados para este estado.
+                            </p>
+                        )}
 
-                    return (
-                        <article
-                            key={`${activeFilter}-${item.id}`}
-                            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-                        >
-                            {/* CABECERA DE TARJETA */}
-                            <div className="flex flex-wrap items-start justify-between gap-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-                                        <MessageCircle size={20} />
-                                    </div>
-
-                                    <div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <h3 className="font-bold text-slate-900">
-                                                {item.type}
-                                            </h3>
-
-                                            {activeFilter ===
-                                                'pending' && (
-                                                <StatusBadge type="pending">
-                                                    {item.status_label}
-                                                </StatusBadge>
-                                            )}
-
-                                            {isApproved && (
-                                                <StatusBadge type="approved">
-                                                    Aprobado
-                                                </StatusBadge>
-                                            )}
-
-                                            {isRejected && (
-                                                <StatusBadge type="rejected">
-                                                    Requiere ajustes
-                                                </StatusBadge>
-                                            )}
-                                        </div>
-
-                                        <p className="mt-1 text-xs text-slate-400">
-                                            Canal: #{item.channel} ·
-                                            Preparado por CloudEdTech
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-xs text-slate-400">
-                                    <Clock size={14} />
-                                    {item.time}
-                                </div>
-                            </div>
-
-                            {/* CONTENIDO */}
-                            <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                <p className="whitespace-pre-line text-sm leading-7 text-slate-700">
-                                    {item.content}
-                                </p>
-                            </div>
-
-                            {/* MÉTRICAS + ACCIONES */}
-                            <div className="mt-5 flex flex-col gap-5 border-t border-slate-100 pt-5 lg:flex-row lg:items-end lg:justify-between">
-                                <div>
-                                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                                        Criterios de evaluación
-                                    </p>
-
-                                    <div className="flex flex-wrap gap-3">
-                                        <MetricBadge
-                                            title="Relevancia"
-                                            value={`${item.relevance}%`}
-                                            className="bg-green-50 text-green-700"
-                                        />
-
-                                        <MetricBadge
-                                            title="Sentimiento"
-                                            value={`${item.sentiment}%`}
-                                            className="bg-blue-50 text-blue-700"
-                                        />
-
-                                        <MetricBadge
-                                            title="Alineación de marca"
-                                            value="100%"
-                                            className="bg-purple-50 text-purple-700"
-                                        />
-                                    </div>
-                                </div>
-
-                                {activeFilter === 'pending' && (
-                                    <div className="flex flex-wrap gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleReject(item.id)
-                                            }
-                                            className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                                        >
-                                            <X size={16} />
-                                            Solicitar ajustes
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleApprove(item.id)
-                                            }
-                                            className="flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-                                        >
-                                            <Check size={16} />
-                                            Aprobar contenido
-                                        </button>
-                                    </div>
-                                )}
-
-                                {isApproved && (
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
-                                        <CheckCircle2 size={18} />
-                                        Revisión completada
-                                    </div>
-                                )}
-
-                                {isRejected && (
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-red-500">
-                                        <XCircle size={18} />
-                                        Pendiente de ajustes
-                                    </div>
-                                )}
-                            </div>
-                        </article>
-                    )
-                })}
-            </div>
+                        {motorGroups[motorActiveFilter].map((item) => (
+                            <MotorApprovalCard
+                                key={item.id}
+                                item={item}
+                                onReview={handleReview}
+                                reviewing={reviewingId === item.id}
+                                reviewDisabled={reviewingId !== null || motorLoading}
+                            />
+                        ))}
+                    </>
+                )}
+            </section>
 
             {/* NOTA DE INTEGRACIÓN */}
             <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
@@ -377,179 +299,15 @@ function Approvals() {
                         </p>
 
                         <p className="mt-1 text-xs leading-5 text-blue-700">
-                            Las decisiones mostradas durante esta etapa
-                            permanecen en el estado local de la interfaz
-                            mientras se completa la integración definitiva
-                            con el backend. La publicación externa no se
-                            ejecuta automáticamente desde este tablero.
+                            Los contenidos e indicadores provienen del Motor IA.
+                            Este tablero permanece en modo de consulta hasta
+                            implementar la autenticacion y los permisos de revision.
+                            Aprobar y publicar seran acciones independientes.
+                            No se publican contenidos externos desde esta pantalla.
                         </p>
                     </div>
                 </div>
             </div>
-        </div>
-    )
-}
-
-function SummaryCard({
-    title,
-    value,
-    helper,
-    icon,
-}: {
-    title: string
-    value: number
-    helper: string
-    icon: React.ReactNode
-}) {
-    return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className="text-sm text-slate-500">
-                        {title}
-                    </p>
-
-                    <p className="mt-2 text-3xl font-bold text-slate-900">
-                        {value}
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-400">
-                        {helper}
-                    </p>
-                </div>
-
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50">
-                    {icon}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function FilterButton({
-    active,
-    onClick,
-    children,
-}: {
-    active: boolean
-    onClick: () => void
-    children: React.ReactNode
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
-                active
-                    ? 'bg-[#080A27] text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-            }`}
-        >
-            {children}
-        </button>
-    )
-}
-
-function StatusBadge({
-    type,
-    children,
-}: {
-    type: 'pending' | 'approved' | 'rejected'
-    children: React.ReactNode
-}) {
-    const styles = {
-        pending: 'bg-yellow-100 text-yellow-700',
-        approved: 'bg-emerald-100 text-emerald-700',
-        rejected: 'bg-red-100 text-red-600',
-    }
-
-    return (
-        <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${styles[type]}`}
-        >
-            {children}
-        </span>
-    )
-}
-
-function MetricBadge({
-    title,
-    value,
-    className,
-}: {
-    title: string
-    value: string
-    className: string
-}) {
-    return (
-        <div className={`rounded-lg px-3 py-2 ${className}`}>
-            <p className="text-xs opacity-80">
-                {title}
-            </p>
-
-            <p className="font-bold">
-                {value}
-            </p>
-        </div>
-    )
-}
-
-function EmptyState({
-    filter,
-}: {
-    filter: ReviewFilter
-}) {
-    const content = {
-        pending: {
-            title: 'No hay contenidos pendientes',
-            description:
-                'Todas las propuestas disponibles han sido revisadas.',
-            icon: (
-                <Check
-                    size={32}
-                    className="mx-auto text-green-500"
-                />
-            ),
-        },
-
-        approved: {
-            title: 'No hay aprobaciones en esta sesión',
-            description:
-                'Los contenidos que apruebes aparecerán aquí.',
-            icon: (
-                <CheckCircle2
-                    size={32}
-                    className="mx-auto text-slate-300"
-                />
-            ),
-        },
-
-        rejected: {
-            title: 'No hay contenidos que requieran ajustes',
-            description:
-                'Los contenidos devueltos para revisión aparecerán aquí.',
-            icon: (
-                <XCircle
-                    size={32}
-                    className="mx-auto text-slate-300"
-                />
-            ),
-        },
-    }
-
-    const current = content[filter]
-
-    return (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            {current.icon}
-
-            <h3 className="mt-4 font-bold text-slate-900">
-                {current.title}
-            </h3>
-
-            <p className="mt-2 text-sm text-slate-500">
-                {current.description}
-            </p>
         </div>
     )
 }

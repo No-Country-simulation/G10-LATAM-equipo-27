@@ -10,8 +10,9 @@ import {
   Sparkles,
 } from 'lucide-react'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { createContentDraft } from '../api/contentWorkflow'
 import { mockCommunityData } from '../data/mockCommunityData'
 
 type ContentFormat = 'linkedin' | 'x' | 'discord'
@@ -19,6 +20,9 @@ type ContentFormat = 'linkedin' | 'x' | 'discord'
 type DraftState = {
   content: string
   submitted: boolean
+  submitting?: boolean
+  error?: string
+  savedId?: number
 }
 
 function ContentStudio() {
@@ -29,6 +33,74 @@ function ContentStudio() {
   const generatedContent = mockCommunityData.content_studio[0]
 
   const waitingStories = mockCommunityData.highlights
+
+  const [activeComplaint, setActiveComplaint] = useState<number | null>(null)
+  const activeComplaintRef = useRef<number | null>(null)
+  const complaintRequestRef = useRef(0)
+  const [complaintResponse, setComplaintResponse] = useState('')
+  const [complaintGenerating, setComplaintGenerating] = useState(false)
+  const [complaintGenerationError, setComplaintGenerationError] = useState('')
+
+  type Complaint = {
+    id: number
+    texto: string
+    autor: string | null
+    canal: string | null
+    sentimiento: string | null
+    relevancia: number | null
+    clasificacion: string
+  }
+
+  const [complaints, setComplaints] = useState<Complaint[]>([])
+  const [complaintsLoading, setComplaintsLoading] = useState(true)
+  const [complaintsError, setComplaintsError] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const cargarQuejas = async () => {
+      try {
+        setComplaintsLoading(true)
+        setComplaintsError('')
+
+        const motorApiUrl = (
+          import.meta.env.VITE_MOTOR_API_URL ||
+          'http://127.0.0.1:8001'
+        ).replace(/\/$/, '')
+
+        const response = await fetch(
+          `${motorApiUrl}/api/community/complaints`,
+          { signal: controller.signal }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Error HTTP ${response.status}`)
+        }
+
+        const data: { items: Complaint[] } = await response.json()
+
+        if (!controller.signal.aborted) {
+          setComplaints(data.items)
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setComplaintsError(
+            error instanceof Error
+              ? error.message
+              : 'No se pudieron cargar las posibles quejas.'
+          )
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setComplaintsLoading(false)
+        }
+      }
+    }
+
+    void cargarQuejas()
+
+    return () => controller.abort()
+  }, [])
 
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -149,14 +221,83 @@ ${selectedStory.message}
     }, 2000)
   }
 
-  const handleSubmit = (format: ContentFormat) => {
+  const submittingRef = useRef<Set<ContentFormat>>(new Set())
+
+  const handleSubmit = async (format: ContentFormat) => {
+    const draft = drafts[format]
+    const content = draft.content.trim()
+
+    if (draft.submitted || submittingRef.current.has(format)) {
+      return
+    }
+
+    if (!content) {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          error: 'Escribe un contenido antes de enviarlo.',
+        },
+      }))
+      return
+    }
+
+    if (format === 'x' && [...content].length > 280) {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          error: 'El contenido supera los 280 caracteres.',
+        },
+      }))
+      return
+    }
+
+    submittingRef.current.add(format)
+
     setDrafts((current) => ({
       ...current,
       [format]: {
         ...current[format],
-        submitted: true,
+        submitting: true,
+        error: '',
       },
     }))
+
+    try {
+      const result = await createContentDraft({
+        plataforma: format,
+        titulo: `Contenido ${format.toUpperCase()} - ${new Date().toLocaleDateString('es-CO')}`,
+        contenido: content,
+        tono: 'profesional',
+        tipo_contenido: 'publicacion',
+      })
+
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          submitted: true,
+          submitting: false,
+          savedId: result.id,
+          error: '',
+        },
+      }))
+    } catch (error) {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          submitting: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'No fue posible enviar el contenido a aprobación.',
+        },
+      }))
+    } finally {
+      submittingRef.current.delete(format)
+    }
   }
 
   const handleRegenerate = (format: ContentFormat) => {
@@ -560,7 +701,7 @@ ${story.message}
                 <button
                   type="button"
                   onClick={() => handleSubmit(format.id)}
-                  disabled={draft.submitted || (format.id === 'x' && [...draft.content].length > 280)}
+                  disabled={draft.submitted || draft.submitting || (format.id === 'x' && [...draft.content].length > 280)}
                   className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${draft.submitted
                     ? 'cursor-not-allowed bg-green-50 text-green-700'
                     : 'bg-orange-500 text-white hover:bg-orange-600'
@@ -574,8 +715,22 @@ ${story.message}
 
                   {draft.submitted
                     ? 'Enviado a aprobación'
-                    : 'Enviar a aprobación'}
+                    : draft.submitting
+                      ? 'Enviando...'
+                      : 'Enviar a aprobación'}
                 </button>
+
+                {draft.savedId && (
+                  <p className="mt-2 text-center text-xs font-medium text-green-700">
+                    Borrador #{draft.savedId} guardado para revisión.
+                  </p>
+                )}
+
+                {draft.error && (
+                  <p role="alert" className="mt-2 text-center text-xs text-red-600">
+                    {draft.error}
+                  </p>
+                )}
 
                 {format.id === 'discord' && (
                   <p className="mt-3 text-center text-xs leading-5 text-slate-400">
@@ -617,83 +772,261 @@ ${story.message}
               </div>
 
               <p className="mt-1 text-sm text-slate-500">
-                Mensajes que requieren atención prioritaria antes de
-                generar una respuesta.
+                Interacciones negativas de Discord que requieren revisión
+                para determinar si necesitan una respuesta.
               </p>
             </div>
           </div>
 
           <span className="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600">
-            2 pendientes
+            {complaintsLoading ? 'Cargando...' : `${complaints.length} posibles quejas`}
           </span>
         </div>
 
+        {complaintsError && (
+          <p role="alert" className="mt-4 text-sm text-red-600">
+            No se pudieron cargar las interacciones: {complaintsError}
+          </p>
+        )}
+
         <div className="mt-5 space-y-3">
-          <div className="rounded-xl border border-rose-100 bg-rose-50/30 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
-                  Soporte crítico
-                </span>
+          {!complaintsLoading && !complaintsError && complaints.length === 0 && (
+            <p className="text-sm text-slate-500">
+              No hay interacciones negativas para revisar.
+            </p>
+          )}
 
-                <span className="text-xs text-slate-400">
-                  Discord
+          {complaints.map((complaint) => (
+            <div
+              key={complaint.id}
+              className="rounded-xl border border-rose-100 bg-rose-50/30 p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                    Posible queja
+                  </span>
+
+                  <span className="text-xs text-slate-500">
+                    {complaint.canal || 'Discord'} · {complaint.autor || 'Autor desconocido'}
+                  </span>
+                </div>
+
+                <span className="text-xs font-medium text-orange-600">
+                  Relevancia: {complaint.relevancia ?? 'Sin evaluar'}
                 </span>
               </div>
 
-              <span className="text-xs font-medium text-orange-600">
-                Alta relevancia
-              </span>
-            </div>
+              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
+                {complaint.texto}
+              </p>
 
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              Mensaje identificado por el sistema como una consulta que
-              requiere atención prioritaria de la comunidad.
-            </p>
-
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
-              >
-                Preparar respuesta
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-rose-100 bg-rose-50/30 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
-                  Queja / Reclamo
-                </span>
-
-                <span className="text-xs text-slate-400">
-                  Discord
-                </span>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    complaintRequestRef.current += 1
+                    activeComplaintRef.current = complaint.id
+                    setActiveComplaint(complaint.id)
+                    setComplaintGenerating(false)
+                    setComplaintGenerationError('')
+                    setComplaintResponse('')
+                  }}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                >
+                  Preparar respuesta
+                </button>
               </div>
-
-              <span className="text-xs font-medium text-orange-600">
-                Revisión requerida
-              </span>
             </div>
-
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              Mensaje detectado como reclamo y pendiente de revisión antes
-              de elaborar una respuesta.
-            </p>
-
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
-              >
-                Preparar respuesta
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
+
+      {/* Ventana de respuesta a quejas */}
+      {activeComplaint !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              complaintRequestRef.current += 1
+              activeComplaintRef.current = null
+              setComplaintGenerating(false)
+              setActiveComplaint(null)
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="complaint-dialog-title"
+            className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3
+                  id="complaint-dialog-title"
+                  className="text-xl font-bold text-slate-900"
+                >
+                  Preparar respuesta
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Revisa y redacta una respuesta antes de enviarla a Discord.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  complaintRequestRef.current += 1
+                  activeComplaintRef.current = null
+                  setComplaintGenerating(false)
+                  setActiveComplaint(null)
+                }}
+                aria-label="Cerrar ventana"
+                className="rounded-lg px-3 py-1 text-slate-500 hover:bg-slate-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+              <p className="text-xs font-semibold uppercase text-indigo-600">
+                Mensaje seleccionado
+              </p>
+              <p className="mt-2 text-sm text-slate-700">
+                {complaints.find((item) => item.id === activeComplaint)?.texto
+                  || 'No se encontró el mensaje seleccionado.'}
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                Autor: {complaints.find((item) => item.id === activeComplaint)?.autor || 'Desconocido'}
+                {' · '}
+                Canal: {complaints.find((item) => item.id === activeComplaint)?.canal || 'Discord'}
+              </p>
+            </div>
+
+            <div className="mt-5">
+              <button
+                type="button"
+                disabled={complaintGenerating}
+                onClick={async () => {
+                  if (activeComplaint === null) return
+
+                  const interactionId = activeComplaint
+                  const requestId = ++complaintRequestRef.current
+                  activeComplaintRef.current = interactionId
+
+                  setComplaintGenerating(true)
+                  setComplaintGenerationError('')
+
+                  try {
+                    const motorApiUrl = (
+                      import.meta.env.VITE_MOTOR_API_URL ||
+                      'http://127.0.0.1:8001'
+                    ).replace(/\/$/, '')
+
+                    const response = await fetch(
+                      `${motorApiUrl}/api/community/complaints/generate-response`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          interaccion_id: interactionId,
+                        }),
+                      }
+                    )
+
+                    if (!response.ok) {
+                      throw new Error(`Error HTTP ${response.status}`)
+                    }
+
+                    const data: { respuesta: string } = await response.json()
+
+                    if (
+                      complaintRequestRef.current === requestId &&
+                      activeComplaintRef.current === interactionId
+                    ) {
+                      setComplaintResponse(data.respuesta)
+                    }
+                  } catch (error) {
+                    if (complaintRequestRef.current === requestId) {
+                      setComplaintGenerationError(
+                        error instanceof Error
+                          ? error.message
+                          : 'No se pudo generar la respuesta.'
+                      )
+                    }
+                  } finally {
+                    if (complaintRequestRef.current === requestId) {
+                      setComplaintGenerating(false)
+                    }
+                  }
+                }}
+                className="flex items-center gap-2 rounded-lg bg-indigo-100 px-4 py-2.5 text-sm font-semibold text-indigo-500 disabled:cursor-not-allowed"
+              >
+                <Sparkles size={16} className={complaintGenerating ? 'animate-pulse' : ''} />
+                {complaintGenerating ? 'Generando respuesta...' : 'Generar con IA'}
+              </button>
+            </div>
+
+            {complaintGenerationError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              >
+                No se pudo generar la respuesta: {complaintGenerationError}
+              </p>
+            )}
+
+            <label
+              htmlFor="complaint-response"
+              className="mt-5 block text-sm font-semibold text-slate-700"
+            >
+              Respuesta editable
+            </label>
+
+            <textarea
+              id="complaint-response"
+              value={complaintResponse}
+              onChange={(event) => setComplaintResponse(event.target.value)}
+              placeholder="Escribe aquí tu respuesta a la queja..."
+              rows={7}
+              className="mt-2 w-full resize-y rounded-xl border border-slate-200 p-4 text-sm leading-6 text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+            />
+
+            <p className="mt-2 text-xs text-slate-500">
+              La respuesta no se enviará hasta que confirmes su publicación.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  complaintRequestRef.current += 1
+                  activeComplaintRef.current = null
+                  setComplaintGenerating(false)
+                  setActiveComplaint(null)
+                }}
+                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Pendiente de integración segura con Discord"
+                className="flex items-center gap-2 rounded-lg bg-orange-200 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed"
+              >
+                <Send size={16} />
+                Enviar respuesta a Discord
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* Cola de mensajes en espera */}
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
