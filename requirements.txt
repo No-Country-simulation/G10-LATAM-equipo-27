@@ -6,3 +6,5 @@ pydantic
 python-dotenv
 streamlit
 discord.py
+fastapi
+uvicorn

@@ -12,8 +12,8 @@ Proyecto en Python para evaluar, mediante inteligencia artificial (Groq/Gemini),
 
 ## Comandos
 - **Instalación de dependencias**: `pip install -r requirements.txt`
-- **Ejecución local**: 
-  - Levantar la interfaz de Streamlit: `streamlit run app.py`
+- **Ejecución local (UI)**: `streamlit run app.py`
+- **Ejecución local (API/Backend)**: `uvicorn api:app --reload`
 
 ## Convenciones
 - Nomenclatura en español para variables y funciones (`resultados_destacados`, `paquete_maestro`, etc.).
