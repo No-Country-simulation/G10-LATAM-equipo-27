@@ -26,9 +26,10 @@ def obtener_kpis():
             datos = json.load(f)
             
         # Inyectar el campo 'copy_final' para la Integración Iterativa con Frontend
-        for mensaje in datos:
-            if "copy_final" not in mensaje:
-                mensaje["copy_final"] = "Pendiente de redacción por Enoc..."
+        if "aprobados" in datos:
+            for mensaje in datos["aprobados"]:
+                if "copy_final" not in mensaje:
+                    mensaje["copy_final"] = "Pendiente de redacción por Enoc..."
             
         return datos
     except Exception as e:
