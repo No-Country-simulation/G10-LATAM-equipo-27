@@ -1,35 +1,390 @@
-# 📋 Informe de Sprint Review — Reunión 5
+🎨 Frontend
+Stack tecnológico
+Tecnología	Uso
+React	Construcción de interfaces
+TypeScript	Tipado y mantenibilidad
+Vite	Entorno de desarrollo y build
+Tailwind CSS	Diseño visual y responsive
+React Router	Navegación y rutas protegidas
+Lucide React	Sistema de iconografía
+Netlify	Hosting y despliegue continuo
 
-## ℹ️ Información General
-* **Fecha:** Lunes, 28 de septiembre de 2026.
-* **Próxima sesión:** Jueves, 1 de octubre de 2026.
-* **Proyecto y equipo:** Simulación No Country — Equipo CommunityLab[cite: 2].
-* **Fase actual:** Consolidación de la Etapa 2 (Unificación de Ingesta y Cerebro IA) y modelado de negocio[cite: 2].
-* **Objetivo principal:** Unificar los scripts de extracción y curaduría en un flujo continuo, definir la identidad corporativa del cliente final para alinear el análisis de IA, planificar la migración del modelo fundacional para optimizar recursos, y establecer la arquitectura de persistencia en Oracle Cloud Infrastructure (OCI)[cite: 2].
 
-## 📌 Resumen Ejecutivo
-En este sprint, el equipo logró un hito fundamental: la integración exitosa del motor de captura de datos con el cerebro de Inteligencia Artificial, permitiendo un procesamiento automatizado y modular que ya genera resultados tangibles[cite: 2]. Se definió la identidad de nuestro cliente objetivo ("Cloud Detech", del sector EdTech), lo que nos permite afinar el tono de voz corporativo del producto[cite: 2]. Además, se establecieron las bases para optimizar los costos operativos utilizando modelos de IA de última generación y se delegó la construcción del puente final de almacenamiento seguro en la nube[cite: 2]. El proyecto avanza sólidamente hacia un MVP completamente funcional.
+📊 Módulos principales
+La interfaz incluye diferentes tableros para administración, análisis y gestión de contenido.
+🏠 Dashboard
+Vista general de la comunidad.
+Incluye:
+- Mensajes procesados
+- Audiencia
+- Sentimiento
+- Temas detectados
+- Contenidos generados
+- Aprobaciones pendientes
+- Historias destacadas
+- Gráficos de sentimiento
+- Temas principales
+- Evolución temporal
+- Actividad de audiencia
+💬 Ingesta Discord
+Panel encargado de visualizar las interacciones recibidas desde Discord.
+Permite:
+- Visualizar mensajes
+- Buscar contenido
+- Filtrar por canal
+- Filtrar por sentimiento
+- Clasificar estado de curaduría
+- Consultar relevancia
+- Identificar temas y palabras clave
+- Seleccionar mensajes para análisis
+Flujo:
+Discord
+   ↓
+Ingesta
+   ↓
+Análisis
 
-## 💬 Temas Clave y Discusiones
-* 🏢 **Definición de Identidad de Negocio ("Cloud Detech"):** Para garantizar que el análisis de la IA y el Copywriting tengan un objetivo comercial claro, se estableció que la solución servirá a "Cloud Detech", una empresa ficticia de educación tecnológica en la nube (similar al modelo de Alura)[cite: 2]. Esto permitirá estandarizar el manual de marca y evaluar correctamente el sentimiento de la comunidad[cite: 2].
-* ⚙️ **Unificación del Motor Core (Ingesta + Curaduría):** Se validó la integración del código de extracción de Discord (desarrollado por Eduardo Alonso) con el motor de curaduría IA (desarrollado por Fernando)[cite: 2]. El sistema opera de manera modular utilizando Google Drive como puente, sobreescribiendo archivos JSON dinámicamente para que el equipo consulte siempre la versión más reciente sin duplicar procesos[cite: 2].
-* 🧠 **Optimización de Recursos IA (Transición Estratégica):** Se analizó la viabilidad de migrar el modelo actual hacia "Gemma 4"[cite: 2]. Esta decisión técnica busca aprovechar una mejor estructuración nativa de archivos JSON y una cuota de tokens mucho más amplia, garantizando que el sistema pueda procesar altos volúmenes de datos sin interrupciones ni costos adicionales[cite: 2].
-* 💻 **Evolución del Panel de Control (Frontend):** Se discutió con Andrés la necesidad de expandir la interfaz visual para reflejar el flujo de trabajo completo[cite: 2]. Se acordó la futura integración de ventanas específicas para visualizar la Ingesta, la Curaduría, el Copywriting y el estado de OCI[cite: 2].
-* ☁️ **Estrategia de Almacenamiento en OCI:** Se abordó el reto técnico del despliegue en la nube[cite: 2]. Cristian Astudillo tomará el liderazgo para configurar la cuenta gratuita y desarrollar el script en Python que automatice el envío de los reportes JSON (diarios o semanales) hacia OCI Object Storage[cite: 2].
-* 📈 **Métricas de Productividad y Metodología:** Se hizo un llamado al equipo para incrementar la interacción directa mediante *commits* en ramas individuales dentro de GitHub, lo cual impacta positivamente en las métricas de evaluación de la plataforma No Country[cite: 2].
+📈 Análisis
+Tablero de análisis y curaduría de información.
+Incluye:
+- Métricas globales
+- Sentimiento
+- Relevancia
+- Alineación de marca
+- Emojis destacados
+- Hashtags populares
+- Temas clave
+- Insights
+- Preguntas frecuentes
+- Alertas
+- Selección de mensajes para Copywriting
+Flujo:
+Ingesta
+   ↓
+Análisis
+   ↓
+Redacción de contenidos
 
-## 🤝 Acuerdos y Decisiones
-* 📂 **Arquitectura Desacoplada:** Se mantendrá el enfoque de desarrollo modular; los scripts principales se ejecutan sin interferir entre sí, utilizando un archivo centralizado para la orquestación y protegiendo el código de cada desarrollador[cite: 2].
-* 🤖 **Actualización del Cerebro IA:** Fernando realizará pruebas con el modelo Gemma para validar mejoras en la velocidad, rendimiento y precisión de los formatos JSON antes de pasarlo a la rama principal[cite: 2].
-* 🤝 **Soporte Cruzado en Desarrollo:** Para acelerar la entrega visual del producto, Fernando apoyará a Andrés en la construcción de las vistas faltantes del Frontend[cite: 2].
-* 📅 **Cierre de Documentación:** Se priorizará la finalización inmediata de la documentación de negocio y tono de marca para que el motor de curaduría pueda realizar evaluaciones de sentimiento 100% alineadas a los valores de la empresa[cite: 2].
+✨ Redacción de Contenidos
+Espacio de preparación de contenido basado en interacciones seleccionadas.
+Permite trabajar propuestas para:
+- LinkedIn
+- Newsletter
+- Discord
+Cada contenido puede pasar posteriormente al proceso de aprobación.
+Análisis
+   ↓
+Redacción
+   ↓
+Aprobaciones
 
-## 🚀 Plan de Acción / Tareas Pendientes
+✅ Aprobaciones
+Sistema de revisión humana antes de continuar el flujo de contenido.
+Estados disponibles:
+- Pendiente
+- Aprobado
+- Requiere ajustes
+Incluye criterios como:
+- Relevancia
+- Sentimiento
+- Alineación de marca
+El objetivo es mantener un esquema Human-in-the-Loop, donde el contenido generado o asistido por IA no avanza automáticamente sin revisión humana.
+☁️ Informes y Almacenamiento
+Módulo preparado para integrar los informes generados por la plataforma con la infraestructura de almacenamiento definida para el proyecto.
+La integración definitiva con OCI se realizará mediante servicios backend y API.
+🔄 Flujo funcional
+El flujo principal diseñado para el Community Manager es:
+Discord
+   │
+   ▼
+💬 Ingesta
+   │
+   ▼
+📊 Análisis
+   │
+   ▼
+✨ Redacción de contenidos
+   │
+   ▼
+✅ Aprobaciones
+   │
+   ▼
+☁️ Informes / Almacenamiento
 
-| Tarea / Acción a realizar | Responsable | Contexto o detalles clave |
-| :--- | :--- | :--- |
-| **Cierre de Documentación y Tono de Marca** | Líder de Copywriting (y equipo) | Finalizar la documentación de "Cloud Detech" para establecer los parámetros exactos de evaluación de la IA[cite: 2]. |
-| **Pruebas de optimización con Gemma** | Fernando Frausto | Modificar el orquestador IA para evaluar el rendimiento de generación JSON y manejo de tokens con el nuevo modelo[cite: 2]. |
-| **Desarrollo de Vistas del Dashboard** | Andrés Martínez (Apoyo: Fernando) | Integrar 4 nuevas secciones en la interfaz visual: Ingesta, Curaduría, Copywriting y OCI[cite: 2]. |
-| **Conexión y automatización OCI** | Cristian Astudillo | Desarrollar el script en Python para cargar automáticamente los archivos JSON procesados al Object Storage por lotes[cite: 2]. |
-| **Migración del código a GitHub** | Todo el equipo técnico | Trasladar los scripts probados en Colab/Drive hacia ramas individuales en el repositorio oficial para unificar la versión final[cite: 2]. |
+Esto permite separar claramente:
+Ingesta → Curaduría → Análisis → Copywriting → Revisión humana → Persistencia
+👥 Roles
+La plataforma implementa control de acceso basado en roles.
+👑 Administrador
+Cuenta con acceso al sistema completo, incluyendo:
+- Dashboard
+- Mensajes
+- Historias destacadas
+- Hashtags
+- Audiencia
+- Análisis
+- Calendario
+- Exportaciones
+- Reportes
+- Content Studio
+- Aprobaciones
+- Almacenamiento
+- Auditoría
+- Seguridad
+- Configuración
+🧑‍💻 Community Manager
+Dispone de una interfaz enfocada en su flujo operativo:
+Dashboard
+↓
+Ingesta Discord
+↓
+Análisis
+↓
+Redacción de contenidos
+↓
+Aprobaciones
+↓
+Informes y Almacenamiento
+
+Los módulos administrativos permanecen ocultos y protegidos para este rol.
+👁️ Revisor
+Rol destinado a funciones de revisión de contenido según los permisos definidos por la plataforma.
+🔐 Backend Administrativo
+El backend administrativo fue desarrollado de forma independiente al Motor IA.
+Tecnologías
+Tecnología	Función
+FastAPI	API REST
+Python	Backend
+PostgreSQL	Base de datos
+SQLAlchemy	ORM
+Alembic	Migraciones
+Argon2	Hash seguro de contraseñas
+JWT	Autenticación
+Uvicorn	Servidor ASGI
+Nginx	Reverse Proxy
+
+
+🔑 Autenticación
+La plataforma implementa autenticación propia.
+El usuario inicia sesión utilizando:
+Usuario
+Contraseña
+
+Después de validar las credenciales, el sistema determina el rol y habilita únicamente las rutas autorizadas.
+Las contraseñas no se almacenan en texto plano.
+Se utiliza:
+Argon2
+
+para generar hashes seguros.
+👤 Gestión de usuarios
+Desde el módulo de Seguridad, un administrador puede gestionar usuarios del sistema.
+Entre las funciones implementadas se encuentran:
+- Creación de usuarios
+- Nombre y apellido
+- Username
+- Contraseña
+- Asignación de rol
+- Estado activo/inactivo
+- Gestión administrativa de cuentas
+🛡️ Seguridad
+La arquitectura separa los datos administrativos de los datos procesados por el Motor IA.
+PostgreSQL almacena información relacionada con:
+Usuarios
+Roles
+Credenciales protegidas
+Auditoría
+Configuración administrativa
+Estados internos
+
+Los datos relacionados con Discord y el procesamiento mediante IA pertenecen a otra capa de infraestructura.
+Esto permite reducir el acoplamiento entre:
+Administración
+      ↕
+Motor IA
+
+📜 Auditoría
+El backend incorpora una estructura destinada al registro de acciones administrativas.
+Esto permite mantener trazabilidad sobre operaciones importantes realizadas dentro del sistema.
+🗄️ Base de Datos
+Se utiliza PostgreSQL para la persistencia administrativa.
+Entre las tablas implementadas se encuentran:
+users
+roles
+audit_logs
+oci_weekly_syncs
+alembic_version
+
+Las migraciones son administradas mediante:
+Alembic
+
+☁️ Despliegue Cloud
+La solución utiliza una arquitectura distribuida.
+🌐 Frontend — Netlify
+El frontend React se despliega mediante Netlify.
+Flujo:
+GitHub
+   ↓
+feature/admin-frontend
+   ↓
+Netlify Build
+   ↓
+Vite
+   ↓
+dist/
+   ↓
+Aplicación Web
+
+Build:
+npm run build
+
+La aplicación también cuenta con configuración para soportar correctamente las rutas SPA de React Router.
+☁️ Backend Administrativo — Google Cloud
+El backend administrativo se encuentra desplegado en una máquina virtual de Google Cloud Compute Engine.
+Arquitectura:
+Internet
+   ↓
+HTTPS
+   ↓
+Cloudflare Tunnel
+   ↓
+Nginx
+   ↓
+FastAPI / Uvicorn
+   ↓
+PostgreSQL
+
+La API FastAPI se ejecuta internamente y Nginx funciona como Reverse Proxy.
+🐘 PostgreSQL en Google Cloud
+La base de datos administrativa se encuentra dentro de la infraestructura de Google Cloud.
+Esta base se mantiene separada de la infraestructura del Motor IA.
+Contiene principalmente:
+Usuarios
+Roles
+Auditoría
+Configuraciones
+Información administrativa
+
+🔒 Comunicación segura
+El frontend no accede directamente a PostgreSQL.
+La comunicación sigue el modelo:
+React
+   ↓
+HTTPS
+   ↓
+FastAPI
+   ↓
+SQLAlchemy
+   ↓
+PostgreSQL
+
+De esta manera, las credenciales de la base de datos permanecen únicamente en el servidor.
+📱 Diseño Responsive
+La interfaz fue adaptada para diferentes tamaños de pantalla.
+Escritorio
+- Sidebar permanente
+- Navegación con scroll independiente
+- Información del usuario siempre visible
+- Acceso permanente a cerrar sesión
+Tablet / Smartphone
+- Navegación mediante menú hamburguesa
+- Sidebar lateral desplegable
+- Overlay de navegación
+- Cierre automático al seleccionar un módulo
+- Contenido adaptable al ancho disponible
+Esto permite utilizar CloudEdTech tanto desde computadores como desde dispositivos móviles.
+🔀 Estrategia Git
+El desarrollo se separó en ramas para mantener independencia entre componentes.
+Frontend
+feature/admin-frontend
+
+Backend administrativo
+feature/admin-backend
+
+Esta separación permite trabajar en frontend y backend administrativo sin interferir directamente con el desarrollo del Motor IA realizado por otros integrantes del proyecto.
+🧠 Integración con Motor IA
+La arquitectura está preparada para consumir mediante API el backend encargado de:
+- Ingesta desde Discord
+- Procesamiento de mensajes
+- Análisis de sentimiento
+- Identificación de temas
+- Hashtags
+- Audiencia
+- Generación asistida de contenido
+- Métricas de comunidad
+La integración definitiva se realizará cuando el backend del Motor IA se encuentre unificado y estable.
+Algunos datos utilizados actualmente en determinados componentes corresponden a datos de demostración y deberán sustituirse por respuestas reales del backend durante la integración final.
+
+🌍 Arquitectura Cloud Final
+La arquitectura prevista queda separada en dos áreas:
+                     CLOUDEDTECH
+                          │
+          ┌───────────────┴───────────────┐
+          │                               │
+          ▼                               ▼
+     Google Cloud                         OCI
+          │                               │
+ Administración                     Motor IA / Data
+          │                               │
+ ┌────────┴────────┐              ┌───────┴─────────┐
+ │                 │              │                 │
+FastAPI        PostgreSQL      Discord API       IA / RAG
+ │                                │                 │
+Nginx                         Procesamiento     Object Storage
+ │
+HTTPS
+ │
+Netlify / React
+
+Esta separación evita mezclar información administrativa y credenciales de usuarios con el procesamiento de datos de comunidad.
+🚀 Estado actual
+✅ Implementado
+- Frontend React + TypeScript
+- Diseño CloudEdTech
+- Dashboard
+- Ingesta
+- Análisis
+- Redacción de contenidos
+- Aprobaciones
+- Gestión de usuarios
+- Roles y permisos
+- Autenticación
+- Seguridad
+- Auditoría
+- PostgreSQL
+- Backend administrativo FastAPI
+- Migraciones Alembic
+- Despliegue frontend en Netlify
+- Backend administrativo en Google Cloud
+- Reverse Proxy con Nginx
+- Acceso HTTPS para demostración
+- Diseño responsive
+- Navegación móvil
+⏳ Pendiente de integración final
+- Backend definitivo del Motor IA
+- Endpoint público del backend OCI
+- Sustitución de datos demo
+- Integración completa con Discord
+- Persistencia definitiva del flujo de contenidos
+- Integración final de informes con OCI Object Storage
+- Pruebas End-to-End
+🧪 Próxima etapa
+Cuando el backend del Motor IA esté disponible y estable:
+1. Revisar contratos de API
+        ↓
+2. Validar endpoints y JSON
+        ↓
+3. Configurar comunicación Netlify ↔ OCI
+        ↓
+4. Conectar tableros
+        ↓
+5. Sustituir datos de demostración
+        ↓
+6. Validar Discord
+        ↓
+7. Probar flujo completo
+        ↓
+8. Ejecutar pruebas End-to-End
+
+💡 CloudEdTech
+Education & Technology
+Una arquitectura modular orientada a convertir las interacciones de una comunidad digital en información útil, contenido gestionable y decisiones respaldadas por datos.
