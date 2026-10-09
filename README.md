@@ -316,7 +316,7 @@ Algunos datos utilizados actualmente en determinados componentes corresponden a 
 
 🌍 Arquitectura Cloud Final
 La arquitectura prevista queda separada en dos áreas:
-                     CLOUDEDTECH
+                              CLOUDEDTECH
                           │
           ┌───────────────┴───────────────┐
           │                               │
@@ -334,6 +334,7 @@ Nginx                         Procesamiento     Object Storage
 HTTPS
  │
 Netlify / React
+
 
 Esta separación evita mezclar información administrativa y credenciales de usuarios con el procesamiento de datos de comunidad.
 🚀 Estado actual
