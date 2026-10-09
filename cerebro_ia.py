@@ -5,7 +5,7 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 _modelo = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 llm = ChatGroq(model=_modelo, temperature=0.1)
 

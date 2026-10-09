@@ -490,3 +490,23 @@ def actualizar_contenido(
 
     finally:
         conexion.close()
+
+def contar_contenidos(estado: str | None = None) -> int:
+    """Cuenta los contenidos generados, opcionalmente por estado."""
+    conexion = sqlite3.connect(RUTA_BD)
+
+    try:
+        if estado is None:
+            consulta = "SELECT COUNT(*) FROM contenidos_generados"
+            parametros = ()
+        else:
+            consulta = """
+                SELECT COUNT(*)
+                FROM contenidos_generados
+                WHERE estado = ?
+            """
+            parametros = (estado,)
+
+        return conexion.execute(consulta, parametros).fetchone()[0]
+    finally:
+        conexion.close()

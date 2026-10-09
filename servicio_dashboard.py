@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from base_datos import listar_interacciones
+from base_datos import listar_interacciones, contar_contenidos
 from periodos import ZONA_PROYECTO
 import re
 
@@ -322,8 +322,8 @@ def obtener_dashboard() -> dict:
         "topics_detected": temas["total"],
         "new_topics": temas_nuevos["total"],
 
-        "content_generated": 0,
-        "pending_approvals": 0,
+        "content_generated": contar_contenidos(),
+        "pending_approvals": contar_contenidos("pendiente_revision"),
     }
 
 def obtener_distribucion_sentimiento() -> list[dict]:
