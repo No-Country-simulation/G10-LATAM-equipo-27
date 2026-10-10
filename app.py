@@ -4,6 +4,8 @@ import subprocess
 import json
 import os
 from dotenv import load_dotenv
+from datetime import date
+from reporte_semanal import generar_reporte_semanal, validar_etiqueta
 
 # Cargar variables de entorno
 load_dotenv()
@@ -177,4 +179,62 @@ if os.path.exists("resultados_kpis.json"):
 else:
     st.info("Aún no se ha generado el archivo de resultados. Ejecuta el análisis en el paso 2.")
 
+st.divider()
 
+# --- 5. REPORTE SEMANAL Y DISTRIBUCIÓN OCI ---
+st.header("5. Reporte Semanal y Distribución (OCI)")
+st.markdown("Genera el paquete semanal oficial consolidado y súbelo a Oracle Cloud Infrastructure Object Storage.")
+
+def etiqueta_semana(d: date) -> str:
+    iso = d.isocalendar()
+    return f"{iso.year}-semana-{iso.week:02d}"
+
+# Si hay fecha "Desde" en la sección 2, se usa; si no, la semana actual
+fecha_base = fecha_desde if fecha_desde else date.today()
+etiqueta_sugerida = etiqueta_semana(fecha_base)
+
+col_rep1, col_rep2 = st.columns([1, 1])
+
+with col_rep1:
+    semana_input = st.text_input("Etiqueta de la Semana:", value=etiqueta_sugerida)
+with col_rep2:
+    st.write("") # Espaciador visual
+    st.write("")
+    boton_reporte = st.button("📦 Generar y Subir Reporte a OCI", type="primary", use_container_width=True)
+
+if fecha_desde and semana_input.strip() != etiqueta_semana(fecha_desde):
+    st.warning(
+        f"⚠️ Tus fechas de análisis corresponden a **{etiqueta_semana(fecha_desde)}**, "
+        f"pero la etiqueta dice **{semana_input}**."
+    )
+
+if boton_reporte:
+    try:
+        etiqueta = validar_etiqueta(semana_input)
+
+        if not os.path.exists("resultados_kpis.json"):
+            st.warning("Primero ejecuta el análisis (sección 2).")
+            st.stop()
+
+        with open("resultados_kpis.json", "r", encoding="utf-8") as f:
+            paquete = json.load(f)
+
+        with st.spinner("Empaquetando JSON y subiendo a Oracle Cloud..."):
+            reporte_resultado = generar_reporte_semanal(etiqueta, paquete)
+
+        oci = reporte_resultado["metadata"]["oci_storage"]
+        st.success(f"🎉 Subido a `{oci['bucket']}/{oci['ruta']}`")
+
+        with st.expander("👁️ Ver JSON del Reporte Semanal generado", expanded=True):
+            st.json(reporte_resultado)
+
+        st.download_button(
+            label=f"⬇️ Descargar {etiqueta}.json",
+            data=json.dumps(reporte_resultado, indent=2, ensure_ascii=False),
+            file_name=f"{etiqueta}.json",
+            mime="application/json",
+        )
+    except ValueError as e:
+        st.warning(str(e))
+    except Exception as e:
+        st.error(f"❌ Ocurrió un error al generar o subir el reporte: {e}")
