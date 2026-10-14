@@ -2,7 +2,7 @@
 
 ## ℹ️ Información General
 
-- **Fecha:** Sábado, 10 de octubre de 2026.
+- **Fecha:** Lunes, 12 de octubre de 2026.
 - **Próxima sesión / demo:** Jueves 15 de octubre (meta: presentar el flujo completo ya integrado).
 - **Proyecto y equipo:** Simulación No Country — Equipo CommunityLab (Hackathon ONE G10).
 - **Fase actual:** Etapa 2 — Orquestación multi-agente, integración backend/frontend y preparación de pruebas y video de demo.
