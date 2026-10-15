@@ -76,7 +76,7 @@ type MessageItem = {
 }
 
 const API_BASE_URL =
-    import.meta.env.VITE_MOTOR_API_URL || 'http://127.0.0.1:8001'
+    import.meta.env.VITE_MOTOR_API_URL || 'http://127.0.0.1:8002'
 
 function Messages() {
     const navigate = useNavigate()

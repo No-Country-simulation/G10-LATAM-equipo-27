@@ -35,7 +35,7 @@ function SentimentChart() {
             try {
 
                 const response = await fetch(
-                    'http://127.0.0.1:8001/api/community/analytics'
+                    (import.meta.env.VITE_MOTOR_API_URL || "http://127.0.0.1:8002").replace(/\/$/, "") + "/api/community/analytics"
                 )
 
                 if (!response.ok) {

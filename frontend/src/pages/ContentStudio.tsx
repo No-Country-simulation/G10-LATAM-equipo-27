@@ -87,7 +87,7 @@ function ContentStudio() {
       try {
         const motorApiUrl = (
           import.meta.env.VITE_MOTOR_API_URL ||
-          'http://127.0.0.1:8001'
+          'http://127.0.0.1:8002'
         ).replace(/\/$/, '')
 
         const response = await fetch(
@@ -252,7 +252,7 @@ function ContentStudio() {
 
         const motorApiUrl = (
           import.meta.env.VITE_MOTOR_API_URL ||
-          'http://127.0.0.1:8001'
+          'http://127.0.0.1:8002'
         ).replace(/\/$/, '')
 
         const response = await fetch(
