@@ -64,6 +64,7 @@ def crear_tabla() -> None:
             "tema": "TEXT",
             "segmento": "TEXT",
             "razonamiento": "TEXT",
+            "estado_curaduria": "TEXT NOT NULL DEFAULT 'pending'",
             "etapa_flujo": "TEXT NOT NULL DEFAULT 'ingesta'",
         }
 
