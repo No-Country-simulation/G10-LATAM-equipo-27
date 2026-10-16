@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -29,27 +30,35 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
-    # Iniciar Discord Bot en el mismo event loop de FastAPI
-    discord_task = asyncio.create_task(
-        discord_bot.start(DISCORD_BOT_TOKEN)
+    # Inicio opcional del bot Discord.
+    enable_discord_bot = os.getenv("ENABLE_DISCORD_BOT", "true").strip().lower() in (
+        "1", "true", "yes", "on"
     )
+    discord_task = None
 
-    print("[COMMUNITYLAB] Backend iniciado")
-    print("[COMMUNITYLAB] Discord Bot iniciando...")
+    if enable_discord_bot:
+        discord_task = asyncio.create_task(
+            discord_bot.start(DISCORD_BOT_TOKEN)
+        )
+        print("[CLOUDEDTECH] Discord Bot iniciando...")
+    else:
+        print("[CLOUDEDTECH] Discord Bot desactivado")
+
+    print("[CLOUDEDTECH] Backend iniciado")
 
     try:
         yield
     finally:
-        print("[COMMUNITYLAB] Cerrando Discord Bot...")
+        if discord_task is not None:
+            print("[CLOUDEDTECH] Cerrando Discord Bot...")
 
-        if not discord_bot.is_closed():
-            await discord_bot.close()
+            if not discord_bot.is_closed():
+                await discord_bot.close()
 
-        try:
-            await discord_task
-        except asyncio.CancelledError:
-            pass
-
+            try:
+                await discord_task
+            except asyncio.CancelledError:
+                pass
 
 app = FastAPI(
     title="CommunityLab API",
