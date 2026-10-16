@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ver_json import obtener_json
 
 from base_datos import (
+    crear_tabla,
     obtener_interaccion,
     guardar_contenido,
     listar_contenidos,
@@ -42,6 +43,10 @@ app = FastAPI(
     title="CloudEdTech AI & Community API",
     version="1.0.0",
 )
+
+@app.on_event("startup")
+def inicializar_base_datos():
+    crear_tabla()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
