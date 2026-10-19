@@ -31,3 +31,96 @@ resultados_kpis.json
 *.pem
 reportes/
 
+# ----------------------------------------------
+# ----------------------------------------------
+Enoc Ramirez parte agregada
+# ----------------------------------------------
+# ----------------------------------------------
+
+# ==================================================
+# 1. VARIABLES DE ENTORNO Y CREDENCIALES
+# ==================================================
+# Secretos y configuración local: nunca subir a GitHub.
+.env
+.env.*
+.env.local
+!.env.example
+
+# Llaves privadas y certificados privados.
+*.pem
+
+
+# ==================================================
+# 2. ENTORNOS VIRTUALES DE PYTHON
+# ==================================================
+.venv/
+venv/
+env/
+ENV/
+
+
+# ==================================================
+# 3. CACHÉ Y ARCHIVOS COMPILADOS DE PYTHON
+# ==================================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# ==================================================
+# 4. PRUEBAS, ANÁLISIS Y COBERTURA
+# ==================================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+
+# ==================================================
+# 5. ARTEFACTOS DE CONSTRUCCIÓN Y DISTRIBUCIÓN
+# ==================================================
+build/
+dist/
+*.egg-info/
+
+
+# ==================================================
+# 6. JUPYTER Y NOTEBOOKS
+# ==================================================
+.ipynb_checkpoints/
+
+
+# ==================================================
+# 7. RESULTADOS Y ARCHIVOS GENERADOS LOCALMENTE
+# ==================================================
+# Archivo local de resultados/entrada, si no debe versionarse.
+resultados_kpis.json
+
+# Reportes generados durante la ejecución.
+reportes/
+
+
+# ==================================================
+# 8. LOGS Y ARCHIVOS TEMPORALES
+# ==================================================
+*.log
+*.tmp
+*.temp
+*.swp
+*~
+
+
+# ==================================================
+# 9. CONFIGURACIÓN LOCAL DE EDITORES E IDE
+# ==================================================
+.vscode/
+.idea/
+
+
+# ==================================================
+# 10. ARCHIVOS DEL SISTEMA OPERATIVO
+# ==================================================
+.DS_Store
+Thumbs.db

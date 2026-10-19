@@ -1,12 +1,38 @@
+# Conectores de IA y Google GenAI (con soporte asíncrono aiohttp)
+
+google-genai[aiohttp]
+
+# Ecosistema LangGraph, LangChain y Persistencia
+
 langchain
 langchain-groq
 langchain-core
 langchain-google-genai
-pydantic
-python-dotenv
-streamlit
-discord.py
+langgraph
+langgraph-checkpoint-postgres
+
+# Base de datos PostgreSQL y cliente oficial de Supabase
 psycopg2-binary
+psycopg[binary,pool]
+supabase
+
+# Validación de datos y reparación de JSON (esencial para la estabilidad de los LLMs)
+pydantic
+json-repair
+
+# Utilidades de red, APIs externas y gestión asíncrona
+
+requests
+tweepy
+nest-asyncio
+
+# Gestión segura de variables de entorno (Reemplaza a userdata de Colab)
+python-dotenv
+
+# Interfaz visual para el MVP (Streamlit - para cuando pasemos a la UI)
+streamlit
+
+discord.py
 oci
 fastapi
 uvicorn
