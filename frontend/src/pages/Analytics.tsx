@@ -1,3 +1,4 @@
+import { apiRequest } from '../api/client'
 import { updateMessageWorkflow } from '../api/messageWorkflow'
 import { updateMessageCuration } from '../api/messageCuration'
 import {
@@ -24,6 +25,7 @@ type IncomingInteraction = {
     author: string
     channel: string
     content: string
+    attachments: Array<{ id: string; filename: string; content_type?: string | null }>
     sentiment: 'positive' | 'neutral' | 'negative'
     sentimentLabel: string
     topic: string
@@ -36,9 +38,11 @@ type MotorMessageResponse = {
         message: {
             interaction_id: number
             message_id: string
+            reactions?: Array<{ emoji: string; cantidad: number }>
             author_name: string
             channel_name: string
             content: string
+            attachments?: Array<{ id: string; filename: string; content_type?: string | null }>
         }
         analysis: {
             sentiment: 'positive' | 'neutral' | 'negative'
@@ -51,10 +55,12 @@ type MotorMessageResponse = {
     }>
 }
 
-const MOTOR_API_URL =
-    import.meta.env.VITE_MOTOR_API_URL || 'http://127.0.0.1:8002'
 
 type MotorAnalyticsResponse = {
+    brand_alignment?: {
+        total_evaluados: number
+        promedio: number | null
+    }
     sentiment?: {
         distribution?: Array<{ name: string; value: number }>
     }
@@ -77,20 +83,21 @@ function Analytics() {
         useState<MotorAnalyticsResponse | null>(null)
     const [analyticsError, setAnalyticsError] = useState<string | null>(null)
 
+    const [showAllKeyTopics, setShowAllKeyTopics] = useState(false)
+    const [emojiScorecards, setEmojiScorecards] = useState<
+        Array<{ emoji: string; label: string; description: string; value: number }>
+    >([])
+
+
     useEffect(() => {
         const controller = new AbortController()
 
         const loadAnalytics = async () => {
             try {
-                const response = await fetch(
-                    `${MOTOR_API_URL}/api/community/analytics`,
-                    { signal: controller.signal },
-                )
-                if (!response.ok) {
-                    throw new Error(`Analytics HTTP ${response.status}`)
-                }
-                const data =
-                    (await response.json()) as MotorAnalyticsResponse
+                const data = (await apiRequest(
+                    '/api/v1/content-workflow/analytics',
+                    { signal: controller.signal }
+                )) as MotorAnalyticsResponse
                 setMotorAnalytics(data)
                 setAnalyticsError(null)
             } catch (error) {
@@ -132,16 +139,7 @@ function Analytics() {
             setQueueError(null)
 
             try {
-                const response = await fetch(
-                    `${MOTOR_API_URL}/api/community/messages?limit=500`,
-                    { signal: controller.signal },
-                )
-
-                if (!response.ok) {
-                    throw new Error('No se pudo consultar la bandeja de Analisis')
-                }
-
-                const data: MotorMessageResponse = await response.json()
+                const data = (await apiRequest('/api/v1/content-workflow/messages?limit=500', { signal: controller.signal })) as MotorMessageResponse & { total?: number }
 
                 const queue = data.messages
                     .filter(
@@ -165,6 +163,7 @@ function Analytics() {
                                 author: item.message.author_name || 'Usuario',
                                 channel: item.message.channel_name,
                                 content: item.message.content,
+                                attachments: (item.message.attachments ?? []).map(f => ({ id: f.id, filename: f.filename, content_type: f.content_type })),
                                 sentiment,
                                 sentimentLabel,
                                 topic: item.analysis.topic,
@@ -221,17 +220,38 @@ function Analytics() {
 
         const loadStats = async () => {
             try {
-                const response = await fetch(
-                    `${MOTOR_API_URL}/api/community/messages?limit=500`,
-                    { signal: controller.signal },
-                )
-                if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-                const data = (await response.json()) as MotorMessageResponse & {
-                    total?: number
-                }
+                const data = (await apiRequest('/api/v1/content-workflow/messages?limit=500', { signal: controller.signal })) as MotorMessageResponse & { total?: number }
 
                 const messages = data.messages ?? []
+
+                const conteosEmojis = new Map<string, number>()
+
+                for (const registro of messages) {
+                    for (const reaccion of registro.message.reactions ?? []) {
+                        const emoji = reaccion.emoji
+                        const cantidad = Number(reaccion.cantidad)
+
+                        if (!emoji || !Number.isFinite(cantidad) || cantidad <= 0) continue
+
+                        conteosEmojis.set(
+                            emoji,
+                            (conteosEmojis.get(emoji) ?? 0) + cantidad,
+                        )
+                    }
+                }
+
+                setEmojiScorecards(
+                    [...conteosEmojis.entries()]
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([emoji, value]) => ({
+                            emoji,
+                            label: emoji,
+                            description: 'Reacciones registradas en Discord',
+                            value,
+                        })),
+                )
+
                 const analyzed = messages.filter(
                     (item) => Number.isFinite(Number(item.analysis?.relevance)),
                 )
@@ -327,7 +347,17 @@ function Analytics() {
         icon: topicIcons[index % topicIcons.length],
     }))
 
-    const brandAlignment = 'N/D'
+    const brandAverage = motorAnalytics?.brand_alignment?.promedio
+    const brandTotal = motorAnalytics?.brand_alignment?.total_evaluados ?? 0
+
+    const brandAlignment =
+        brandTotal > 0 &&
+        typeof brandAverage === 'number' &&
+        Number.isFinite(brandAverage) &&
+        brandAverage >= 0 &&
+        brandAverage <= 100
+            ? `${brandAverage.toFixed(1)}%`
+            : 'N/D'
 
     const leadingTopic = [...(motorAnalytics?.topics ?? [])]
         .sort((a, b) => b.percentage - a.percentage)[0]
@@ -504,7 +534,11 @@ function Analytics() {
                     <MetricCard
                         label="Alineación de marca"
                         value={String(brandAlignment)}
-                        helper="Consistencia de tono CloudEdTech"
+                        helper={
+                            brandTotal > 0
+                                ? `${brandTotal} contenido${brandTotal === 1 ? '' : 's'} evaluado${brandTotal === 1 ? '' : 's'}`
+                                : 'Sin contenidos evaluados'
+                        }
                         icon={<ShieldCheck size={19} />}
                         iconClass="bg-emerald-100 text-emerald-600"
                         accent="text-emerald-600"
@@ -541,14 +575,17 @@ function Analytics() {
                     </div>
 
                     <span className="text-xs text-slate-400">
-                        Frecuencia agregada y sentiment telemetry
+                        Frecuencia de reacciones registradas en Discord
                     </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                    {([] as Array<{emoji: string; label: string; description: string; value: number; trend: string}>).map((item) => {
-                        const negative = item.trend.startsWith('-')
-
+                    {emojiScorecards.length === 0 && (
+                        <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-500">
+                            Todav?a no hay reacciones de Discord sincronizadas para mostrar.
+                        </div>
+                    )}
+                    {emojiScorecards.map((item) => {
                         return (
                             <div
                                 key={item.label}
@@ -559,15 +596,7 @@ function Analytics() {
                                         {item.emoji}
                                     </span>
 
-                                    <span
-                                        className={`rounded-md px-2 py-1 text-[10px] font-bold ${
-                                            negative
-                                                ? 'bg-rose-50 text-rose-600'
-                                                : 'bg-emerald-50 text-emerald-600'
-                                        }`}
-                                    >
-                                        {item.trend}
-                                    </span>
+                                    
                                 </div>
 
                                 <p className="mt-3 text-xl font-black text-slate-900">
@@ -689,7 +718,7 @@ function Analytics() {
                     </p>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {keyTopics.map((topic) => {
+                        {(showAllKeyTopics ? keyTopics : keyTopics.slice(0, 8)).map((topic) => {
                             const Icon = topic.icon
 
                             return (
@@ -728,6 +757,17 @@ function Analytics() {
                                 </article>
                             )
                         })}
+                        {keyTopics.length > 8 && (
+                            <button
+                                type="button"
+                                onClick={() => setShowAllKeyTopics(value => !value)}
+                                className="mt-4 w-full rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:bg-orange-100"
+                            >
+                                {showAllKeyTopics
+                                    ? 'Mostrar menos'
+                                    : `Ver todos los temas (${keyTopics.length})`}
+                            </button>
+                        )}
                     </div>
                 </section>
             </div>
@@ -794,6 +834,13 @@ function Analytics() {
                                 <p className="mt-2 line-clamp-2 text-xs text-slate-600">
                                     {item.interaction.content}
                                 </p>
+                                {item.interaction.attachments.length > 0 && (
+                                    <p className="mt-2 break-all text-xs text-slate-500">
+                                        Adjuntos ({item.interaction.attachments.length}): {item.interaction.attachments.map(f =>
+                                            `${f.filename} (${f.content_type || (f.filename.includes('.') ? f.filename.split('.').pop()?.toUpperCase() : 'Archivo')})`
+                                        ).join(', ')}
+                                    </p>
+                                )}
                             </button>
                         ))}
                     </div>
@@ -904,7 +951,7 @@ function Analytics() {
                                     <span>
                                         Alineación de marca:{' '}
                                         <strong className="text-slate-800">
-                                            {brandAlignment}%
+                                            {brandAlignment}
                                         </strong>
                                     </span>
 

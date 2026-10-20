@@ -99,6 +99,31 @@ def root():
     }
 
 
+
+@app.get("/health/discord")
+async def discord_connection_health():
+    from app.discord_connector.config import (
+        DISCORD_GUILD_ID,
+        DISCORD_CHANNEL_IDS,
+    )
+
+    ready = discord_bot.is_ready()
+    closed = discord_bot.is_closed()
+    guild = discord_bot.get_guild(DISCORD_GUILD_ID)
+
+    return {
+        "is_ready": ready,
+        "is_closed": closed,
+        "bot_username": (
+            str(discord_bot.user)
+            if discord_bot.user is not None
+            else None
+        ),
+        "guild_connected": guild is not None,
+        "configured_channels": len(DISCORD_CHANNEL_IDS),
+    }
+
+
 @app.get("/health")
 def health():
     return {

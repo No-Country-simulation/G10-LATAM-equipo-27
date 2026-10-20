@@ -11,6 +11,7 @@ export type MotorApprovalCard = {
     channel: string | null
     time: string
     status: string
+    rejected_at: string | null
     status_label: string
     platform: MotorContent['plataforma']
     content_kind: 'publication' | 'reply'
@@ -20,6 +21,8 @@ export type MotorApprovalCard = {
     review_notes: string | null
     version: number
     attachments: NonNullable<MotorContent['attachments']>
+    generated_image_url: string | null
+    generated_image_prompt: string | null
     relevance?: number
     sentiment?: number
 }
@@ -55,6 +58,7 @@ export function mapMotorContentToApproval(
         channel: item.source_channel_id,
         time: item.creado_en,
         status: item.estado,
+        rejected_at: item.rechazado_en ?? null,
         status_label: reviewLabel(item.estado),
         platform: item.plataforma,
         content_kind: item.tipo_contenido === 'respuesta'
@@ -66,5 +70,7 @@ export function mapMotorContentToApproval(
         review_notes: item.observaciones_revision,
         version: item.version,
         attachments: item.attachments ?? [],
+        generated_image_url: item.imagen_generada_url ?? null,
+        generated_image_prompt: item.imagen_generada_prompt ?? null,
     }
 }

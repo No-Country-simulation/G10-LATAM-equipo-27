@@ -1,4 +1,4 @@
-﻿from dotenv import load_dotenv
+from dotenv import load_dotenv
 from pathlib import Path
 import json
 import os
@@ -13,7 +13,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / '.env')
 
 MOTOR_API_URL = os.getenv(
     "MOTOR_API_URL",
-    "http://127.0.0.1:8001",
+    "http://127.0.0.1:8002",
 ).rstrip("/")
 
 
@@ -61,15 +61,25 @@ def solicitar_motor(
 
     try:
         tiempo_espera = (
-            90
+            90 if metodo == 'POST'
+            and ruta == '/api/v1/oci-storage/weekly-sync'
+            else (
+            105
+            if metodo == "POST"
+            and ruta == "/api/community/discord/recover-selected"
+            else 90
             if metodo == "POST" and (
-                ruta == "/api/content/generate"
+                ruta in {
+                    "/api/content/generate",
+                    "/api/content/brand-alignment",
+                }
                 or (
                     ruta.startswith("/api/content/")
                     and ruta.endswith("/publish")
                 )
             )
             else 15
+        )
         )
         with urlopen(solicitud, timeout=tiempo_espera) as respuesta:
             resultado = json.loads(

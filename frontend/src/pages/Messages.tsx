@@ -1,3 +1,4 @@
+import { apiRequest } from '../api/client'
 import { updateMessageWorkflow } from '../api/messageWorkflow'
 import {
     ChevronRight,
@@ -33,6 +34,8 @@ type ApiMessage = {
         author_id: string
         author_name: string
         content: string
+        reactions?: Array<{ emoji: string; cantidad: number }>
+        attachments?: Array<{ id: string; filename: string; url: string; content_type?: string | null }>
         created_at: string
     }
     analysis: {
@@ -40,6 +43,7 @@ type ApiMessage = {
         sentiment_score: number
         relevance: number
         curation_status: CurationStatus
+        discarded_at?: string | null
         workflow_stage: string
         topic: string
         keywords: string[]
@@ -65,6 +69,9 @@ type MessageItem = {
     time: string
     rawDate: Date
     message: string
+    reactions: Array<{ emoji: string; cantidad: number }>
+    attachments: Array<{ id: string; filename: string; content_type?: string | null }>
+    discardedAt: string | null
     sentiment: 'positive' | 'neutral' | 'negative'
     sentimentLabel: string
     sentimentScore: number
@@ -75,8 +82,6 @@ type MessageItem = {
     highlight: boolean
 }
 
-const API_BASE_URL =
-    import.meta.env.VITE_MOTOR_API_URL || 'http://127.0.0.1:8002'
 
 function Messages() {
     const navigate = useNavigate()
@@ -109,15 +114,10 @@ function Messages() {
         try {
             setIsRefreshing(true)
 
-            const response = await fetch(
-                `${API_BASE_URL}/api/community/messages`
-            )
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP ${response.status}`)
-            }
-
-            const data: MessagesApiResponse = await response.json()
+            const data = (await apiRequest(
+                '/api/v1/content-workflow/messages',
+                { cache: 'no-store' }
+            )) as MessagesApiResponse
 
             setApiData(data)
             setCurationStatus(
@@ -175,10 +175,13 @@ function Messages() {
                     initials,
                     author,
                     guild: message.guild_name || 'Discord',
-                    channel: message.channel_name,
+                    channel: message.channel_name.replace(/^#?preguntas$/i, 'faq'),
                     time: createdAt.toLocaleString('es-CO'),
                     rawDate: createdAt,
                     message: message.content,
+                    reactions: message.reactions ?? [],
+                    attachments: (message.attachments ?? []).map(file => ({ id: file.id, filename: file.filename, content_type: file.content_type })),
+                    discardedAt: analysis.discarded_at ?? null,
                     sentiment: analysis.sentiment,
                     sentimentLabel,
                     sentimentScore: Math.round(Math.max(0, Math.min(1, analysis.sentiment_score)) * 100),
@@ -197,11 +200,17 @@ function Messages() {
     const channels = useMemo(
         () =>
             Array.from(
-                new Set(
-                    messageItems
+                new Set([
+                    'general',
+                    'faq',
+                    'pqrs',
+                    'notificaciones',
+                    'chat-egresados',
+                    'oportunidades-laborales',
+                    ...messageItems
                         .map((message) => message.channel)
-                        .filter(Boolean)
-                )
+                        .filter(Boolean),
+                ])
             ).sort(),
         [messageItems]
     )
@@ -264,9 +273,6 @@ function Messages() {
             return false
         }
 
-        if ((curationStatus[message.id] ?? 'pending') === 'discarded') {
-            return false
-        }
 
         const search = searchTerm.trim().toLowerCase()
 
@@ -792,6 +798,10 @@ function Messages() {
                 {filteredMessages.map((message) => {
                     const status =
                         curationStatus[message.id] || 'pending'
+                    const discardedDate = message.discardedAt ? new Date(message.discardedAt) : null
+                    const canRecover = status === 'discarded' && discardedDate !== null &&
+                        Number.isFinite(discardedDate.getTime()) &&
+                        Date.now() <= discardedDate.getTime() + 7 * 24 * 60 * 60 * 1000
 
                     return (
                         <article
@@ -845,6 +855,50 @@ function Messages() {
                                             <p className="mt-3 text-sm leading-6 text-slate-700">
                                                 {message.message}
                                             </p>
+
+                                            {message.reactions.length > 0 && (
+                                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                    {message.reactions
+                                                        .filter((reaction) => reaction.cantidad > 0)
+                                                        .map((reaction) => (
+                                                            <span
+                                                                key={reaction.emoji}
+                                                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                                                                title="Reaccion registrada en Discord"
+                                                            >
+                                                                <span className="text-base">{reaction.emoji}</span>
+                                                                <span>{reaction.cantidad}</span>
+                                                            </span>
+                                                        ))}
+                                                </div>
+                                            )}
+
+
+                                            {message.attachments.length > 0 && (
+                                                <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                                                    <p className="font-semibold">Adjuntos de Discord ({message.attachments.length})</p>
+                                                    {message.attachments.map((file, index) => (
+                                                        <p key={`${file.id}-${index}`} className="mt-1 break-all">
+                                                            <span className="font-medium">{file.filename}</span>
+                                                            <span className="ml-2 text-slate-400">
+                                                                ({file.content_type || file.filename.split('.').pop()?.toUpperCase() || 'Archivo'})
+                                                            </span>
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {status === 'discarded' && (
+                                                <div className="mt-3 text-xs text-rose-700">
+                                                    {canRecover ? 'Recuperable durante 7 días desde el descarte.' : 'Descarte definitivo: solo consulta.'}
+                                                    {canRecover && (
+                                                        <button type="button" disabled={savingCurationId !== null}
+                                                            onClick={() => void markCuration(message, 'pending')}
+                                                            className="ml-2 rounded-lg border border-rose-300 px-3 py-1 font-semibold hover:bg-rose-50 disabled:opacity-50">
+                                                            Recuperar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
 
                                             {/* Keywords */}
                                             {message.keywords.length > 0 && (
@@ -947,7 +1001,7 @@ function Messages() {
                                             <button
                                                 type="button"
                                                 title="Descartar"
-                                                disabled={savingCurationId !== null}
+                                                disabled={savingCurationId !== null || status === 'discarded'}
                                                 onClick={() =>
                                                     markCuration(
                                                         message,

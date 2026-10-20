@@ -27,3 +27,16 @@ __pycache__/
 # Base de datos del proyecto y sus respaldos
 *.db
 *.db.respaldo_*
+
+# Local Netlify folder
+.netlify
+
+# CloudEdTech - archivos locales y generados
+backend/generated_content_images/
+backups/
+*.bak_*
+*.bak-*
+*.bak_paso*
+*.backup-*
+*.backup_*
+*.zip

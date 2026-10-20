@@ -1,4 +1,4 @@
-import { apiRequest } from './client'
+import { apiRequest, apiRequestBlob } from './client'
 
 export type ContentPlatform = 'linkedin' | 'x' | 'discord'
 
@@ -11,6 +11,8 @@ export interface CreateContentDraftRequest {
   hashtags?: string[]
   tono?: string
   tipo_contenido?: string
+  imagen_generada_url?: string | null
+  imagen_generada_prompt?: string | null
 }
 
 export interface ContentDraftResponse {
@@ -92,6 +94,53 @@ export async function createContentDraft(
 
   return response
 }
+
+export interface UpdateContentDraftImageResponse {
+  id: number
+  estado: string
+  imagen_generada_url: string | null
+  message: string
+}
+
+export async function updateContentDraftImage(
+  contenidoId: number,
+  imageUrl: string | null,
+): Promise<UpdateContentDraftImageResponse> {
+  if (!Number.isSafeInteger(contenidoId) || contenidoId <= 0) {
+    throw new Error('Identificador de borrador no valido.')
+  }
+
+  if (
+    imageUrl !== null &&
+    !/^\/api\/v1\/content-workflow\/corporate-images\/[a-f0-9]{32}$/.test(imageUrl)
+  ) {
+    throw new Error('Referencia de imagen corporativa no valida.')
+  }
+
+  const response = (await apiRequest(
+    `/api/v1/content-workflow/drafts/${contenidoId}/image`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        imagen_generada_url: imageUrl,
+      }),
+    },
+  )) as UpdateContentDraftImageResponse
+
+  if (
+    !response ||
+    response.id !== contenidoId ||
+    response.estado !== 'pendiente_revision' ||
+    response.imagen_generada_url !== imageUrl
+  ) {
+    throw new Error(
+      'El servidor no confirmo la actualizacion de la imagen.',
+    )
+  }
+
+  return response
+}
+
 
 export async function generateComplaintResponse(
   interaccionId: number,
@@ -209,4 +258,141 @@ export async function getPublishedComplaintIds(): Promise<number[]> {
   }
 
   return data.interaction_ids
+}
+
+
+export interface BrandAlignmentRequest {
+  contenido: string
+  plataforma: 'linkedin' | 'x' | 'discord'
+  origen?: string
+  contenido_id?: number
+}
+
+export interface BrandAlignmentResponse {
+  puntuacion: number
+  tono_y_voz: number
+  estructura_y_claridad: number
+  valores_de_marca: number
+  seguridad_y_credibilidad: number
+  fortalezas: string[]
+  mejoras: string[]
+  justificacion: string
+  registrada?: boolean
+  evaluacion_id?: number
+}
+
+export async function evaluateBrandAlignment(
+  solicitud: BrandAlignmentRequest,
+): Promise<BrandAlignmentResponse> {
+  const resultado = (await apiRequest(
+    '/api/v1/content-workflow/brand-alignment',
+    {
+      method: 'POST',
+      body: JSON.stringify(solicitud),
+    },
+  )) as BrandAlignmentResponse
+
+  if (
+    !resultado ||
+    typeof resultado.puntuacion !== 'number' ||
+    !Number.isFinite(resultado.puntuacion) ||
+    resultado.puntuacion < 0 ||
+    resultado.puntuacion > 100 ||
+    !Array.isArray(resultado.fortalezas) ||
+    !Array.isArray(resultado.mejoras)
+  ) {
+    throw new Error(
+      'El Motor IA no devolvio una evaluacion de marca valida.',
+    )
+  }
+
+  return resultado
+}
+
+export async function commitBrandAlignment(solicitud: {
+  contenido_id: number
+  contenido: string
+  plataforma: ContentPlatform
+  evaluacion: BrandAlignmentResponse
+}): Promise<void> {
+  const result = await apiRequest('/api/v1/content-workflow/brand-alignment/commit', {
+    method: 'POST',
+    body: JSON.stringify(solicitud),
+  }) as { registrada: boolean }
+  if (!result?.registrada) throw new Error('No se confirmó el registro de alineación de marca.')
+}
+
+
+export interface CorporateImageRequest {
+  plataforma: ContentPlatform
+  titulo: string
+  mensaje: string
+}
+
+export interface CorporateImageResponse {
+  image_id: string
+  image_url: string
+  platform: ContentPlatform
+  generator: 'corporate_template'
+}
+
+export async function generateCorporateImage(
+  request: CorporateImageRequest,
+): Promise<CorporateImageResponse> {
+  const result = (await apiRequest(
+    '/api/v1/content-workflow/corporate-images',
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    },
+  )) as CorporateImageResponse
+
+  if (
+    !result ||
+    !/^[a-f0-9]{32}$/.test(result.image_id) ||
+    result.platform !== request.plataforma ||
+    result.generator !== 'corporate_template' ||
+    result.image_url !==
+      `/api/v1/content-workflow/corporate-images/${result.image_id}`
+  ) {
+    throw new Error('El generador devolvio una respuesta inesperada.')
+  }
+
+  return result
+}
+
+
+export async function getCorporateImageBlob(
+  imageUrl: string,
+): Promise<Blob> {
+  if (!/^\/api\/v1\/content-workflow\/corporate-images\/[a-f0-9]{32}$/.test(imageUrl)) {
+    throw new Error('Ruta de imagen corporativa no valida.')
+  }
+
+  return apiRequestBlob(imageUrl)
+}
+
+
+export async function loadApprovalCorporateImage(
+  imageUrl: string,
+): Promise<Blob> {
+  const match = imageUrl.match(
+    /^\/api\/v1\/content-workflow\/corporate-images\/([a-f0-9]{32})$/,
+  )
+
+  if (!match) {
+    throw new Error('Referencia de imagen corporativa no valida.')
+  }
+
+  const blob = await getCorporateImageBlob(imageUrl)
+
+  if (blob.type !== 'image/png') {
+    throw new Error('El servidor no devolvio una imagen PNG.')
+  }
+
+  if (blob.size === 0 || blob.size > 10 * 1024 * 1024) {
+    throw new Error('La imagen tiene un tamano no permitido.')
+  }
+
+  return blob
 }

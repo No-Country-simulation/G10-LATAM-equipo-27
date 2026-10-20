@@ -3,6 +3,7 @@ import { Search, X, RefreshCcw, Inbox } from 'lucide-react'
 import type { DiscordPublishingChannel } from '../api/motorDiscordPublishing'
 import {
   getDiscordRecoveryPreview,
+  recoverSelectedDiscordMessages,
   type DiscordRecoveryMessage,
   type DiscordRecoveryResponse,
 } from '../api/discordRecovery'
@@ -28,6 +29,45 @@ export default function RecoverDiscordMessagesModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [refresh, setRefresh] = useState(0)
+  const [recovering, setRecovering] = useState(false)
+  const [recoveryMessage, setRecoveryMessage] = useState('')
+
+  async function handleRecoverSelected() {
+    if (recovering || loading || selected.length === 0 || selected.length > 20) return
+
+    const confirmado = window.confirm(
+      `¿Deseas incorporar ${selected.length} mensajes históricos de Discord?`
+    )
+    if (!confirmado) return
+
+    const mensajes = selected.map((key) => {
+      const [channel_id, message_id] = key.split(':')
+      return { channel_id, message_id }
+    })
+
+    setRecovering(true)
+    setError('')
+    setRecoveryMessage('')
+
+    try {
+      const resultado = await recoverSelectedDiscordMessages(mensajes)
+
+      setRecoveryMessage(
+        `Recuperación completada: ${resultado.guardadas_nuevas} nuevos, ` +
+        `${resultado.repetidas_omitidas} repetidos y ` +
+        `${resultado.no_encontrados.length} no encontrados.`
+      )
+
+      setSelected([])
+      setRefresh((value) => value + 1)
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'No fue posible recuperar los mensajes.'
+      )
+    } finally {
+      setRecovering(false)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -269,6 +309,11 @@ export default function RecoverDiscordMessagesModal({
           </div>
         </div>
 
+        {recoveryMessage && (
+          <div role="status" className="mx-5 mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+            {recoveryMessage}
+          </div>
+        )}
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-5">
           <span className="text-xs text-slate-500">
             {selected.length} mensajes seleccionados
@@ -283,8 +328,9 @@ export default function RecoverDiscordMessagesModal({
             </button>
             <button
               type="button"
-              disabled
-              title="La recuperacion real se habilitara despues de validar el guardado"
+              disabled={recovering || loading || selected.length === 0 || selected.length > 20}
+              onClick={handleRecoverSelected}
+              title="Recuperar mensajes seleccionados en Ingesta"
               className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               <RefreshCcw size={15} />

@@ -3,7 +3,7 @@ import { CheckCircle2, ShieldCheck, RefreshCcw } from 'lucide-react'
 import { useEffect, useState , useRef } from 'react'
 import { getMotorContents } from '../api/motorContent'
 import { confirmManualPublication } from '../api/motorManualPublishing'
-import { reviewContent, type ContentReviewStatus } from '../api/contentReview'
+import { reviewContent, recoverRejectedContent, type ContentReviewStatus } from '../api/contentReview'
 import MotorApprovalCard from '../components/MotorApprovalCard'
 import {
     getDiscordPublishingChannels,
@@ -251,6 +251,35 @@ function Approvals() {
             setReloadKey((current) => current + 1)
         }
     }
+    async function handleRecoverRejected(contentId: number) {
+        if (reviewingId !== null) return
+
+        if (!window.confirm(
+            `?Recuperar el contenido #${contentId} para una nueva revisión? ` +
+            'Esta acción no lo aprobará ni publicará.'
+        )) return
+
+        setReviewingId(contentId)
+        setReviewMessage(null)
+
+        try {
+            await recoverRejectedContent(contentId)
+            setReviewMessage(
+                `Contenido #${contentId}: recuperado y devuelto a pendientes de revisión.`
+            )
+            setReloadKey((actual) => actual + 1)
+            setMotorActiveFilter('pending')
+        } catch (error) {
+            setReviewMessage(
+                error instanceof Error
+                    ? error.message
+                    : 'No fue posible recuperar el contenido rechazado.'
+            )
+        } finally {
+            setReviewingId(null)
+        }
+    }
+
     async function handleReview(
         contentId: number,
         estado: ContentReviewStatus,
@@ -515,6 +544,7 @@ function Approvals() {
                                     publicationLockedIds.includes(item.id)
                                 }
                                 onReview={handleReview}
+                                onRecoverRejected={handleRecoverRejected}
                                 reviewing={reviewingId === item.id}
                                 reviewDisabled={reviewingId !== null || motorLoading}
                             />

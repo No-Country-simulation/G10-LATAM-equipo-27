@@ -1,3 +1,4 @@
+import { apiRequest } from '../api/client';
 import { useEffect, useState } from "react";
 import { Hash } from "lucide-react";
 
@@ -28,17 +29,10 @@ function Hashtags() {
 
             try {
 
-                const response = await fetch(
-                    (import.meta.env.VITE_MOTOR_API_URL || "http://127.0.0.1:8002").replace(/\/$/, "") + "/api/community/analytics"
-                );
-
-                if (!response.ok) {
-                    throw new Error(
-                        "No fue posible cargar los hashtags"
-                    );
-                }
-
-                const result: AnalyticsResponse = await response.json();
+                const result = (await apiRequest(
+                    '/api/v1/content-workflow/analytics',
+                    { cache: 'no-store' }
+                )) as AnalyticsResponse;
 
                 setHashtags(result.hashtags);
 

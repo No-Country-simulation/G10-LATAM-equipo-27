@@ -1,5 +1,6 @@
 import { CheckCircle2, Clock, MessageCircle, Send } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { loadApprovalCorporateImage } from '../api/contentWorkflow'
 import {
     getMotorMessageOrigin,
     type MotorMessageOrigin,
@@ -11,6 +12,7 @@ import type { MotorApprovalCard as MotorApprovalCardData } from '../api/motorApp
 type Props = {
     item: MotorApprovalCardData
     onReview: (contentId: number, estado: ContentReviewStatus) => void
+    onRecoverRejected: (contentId: number) => void
     reviewing: boolean
     reviewDisabled: boolean
     discordChannels?: DiscordPublishingChannel[]
@@ -59,6 +61,7 @@ function publicationLabel(status: string): string {
 export default function MotorApprovalCard({
     item,
     onReview,
+    onRecoverRejected,
     reviewing,
     reviewDisabled,
     discordChannels = [],
@@ -74,6 +77,61 @@ export default function MotorApprovalCard({
     const [messageOrigin, setMessageOrigin] = useState<MotorMessageOrigin | null>(null)
     const [originLoading, setOriginLoading] = useState(false)
     const [originError, setOriginError] = useState(false)
+
+    const [corporateImagePreview, setCorporateImagePreview] =
+        useState<string | null>(null)
+    const [corporateImageError, setCorporateImageError] =
+        useState<string | null>(null)
+    const [corporateImageLoading, setCorporateImageLoading] =
+        useState(false)
+
+    useEffect(() => {
+        let active = true
+        let objectUrl: string | null = null
+
+        const imageUrl = item.generated_image_url
+        const prefix = '/api/v1/content-workflow/corporate-images/'
+        const imageId = imageUrl?.startsWith(prefix)
+            ? imageUrl.slice(prefix.length)
+            : null
+
+        const isCorporateImage = Boolean(
+            imageId &&
+            imageId.length === 32 &&
+            [...imageId].every((character) =>
+                '0123456789abcdef'.includes(character)
+            )
+        )
+
+        setCorporateImagePreview(null)
+        setCorporateImageError(null)
+        setCorporateImageLoading(isCorporateImage)
+
+        if (isCorporateImage && imageUrl) {
+            loadApprovalCorporateImage(imageUrl)
+                .then((blob) => {
+                    if (!active) return
+                    objectUrl = URL.createObjectURL(blob)
+                    setCorporateImagePreview(objectUrl)
+                })
+                .catch(() => {
+                    if (active) {
+                        setCorporateImageError(
+                            'No fue posible recuperar la imagen corporativa.'
+                        )
+                    }
+                })
+                .finally(() => {
+                    if (active) setCorporateImageLoading(false)
+                })
+        }
+
+        return () => {
+            active = false
+            if (objectUrl) URL.revokeObjectURL(objectUrl)
+        }
+    }, [item.generated_image_url])
+
 
     useEffect(() => {
         let active = true
@@ -109,6 +167,36 @@ export default function MotorApprovalCard({
         (originLoading || originError || !messageOrigin)
 
     const publicationBlockedByOrigin = originIsBot || originUnverified
+
+    const rejectedAtMs = item.rejected_at
+        ? Date.parse(item.rejected_at)
+        : Number.NaN
+
+    const recoveryDeadline = Number.isFinite(rejectedAtMs)
+        ? rejectedAtMs + 7 * 24 * 60 * 60 * 1000
+        : null
+
+    const recoveryRemainingMs = recoveryDeadline === null
+        ? null
+        : recoveryDeadline - Date.now()
+
+    const canRecoverRejected =
+        item.status === 'rechazado' &&
+        recoveryRemainingMs !== null &&
+        recoveryRemainingMs > 0 &&
+        rejectedAtMs <= Date.now()
+
+    const recoveryDeadlineLabel = recoveryDeadline === null
+        ? null
+        : new Date(recoveryDeadline).toLocaleString('es-CO', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        })
+
+    const recoveryRemainingDays =
+        recoveryRemainingMs !== null && recoveryRemainingMs > 0
+            ? Math.ceil(recoveryRemainingMs / (24 * 60 * 60 * 1000))
+            : 0
 
     const [manualPublicationOpen, setManualPublicationOpen] = useState(false)
     const [manualPublicationUrl, setManualPublicationUrl] = useState('')
@@ -301,6 +389,77 @@ export default function MotorApprovalCard({
                 </p>
             </div>
 
+
+            {(corporateImageLoading ||
+              corporateImagePreview ||
+              corporateImageError) && (
+                <section className="mt-5 overflow-hidden rounded-xl border border-indigo-200 bg-indigo-50/40">
+                    <div className="border-b border-indigo-100 px-4 py-3">
+                        <h4 className="text-sm font-semibold text-slate-800">
+                            Imagen corporativa para {platformLabel(item.platform)}
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Vista previa privada. No publicada.
+                        </p>
+                    </div>
+                    {corporateImageLoading && (
+                        <p className="p-4 text-sm text-slate-600">
+                            Cargando imagen corporativa...
+                        </p>
+                    )}
+                    {corporateImageError && (
+                        <p role="alert" className="p-4 text-sm text-red-700">
+                            {corporateImageError}
+                        </p>
+                    )}
+                    {corporateImagePreview && (
+                        <img
+                            src={corporateImagePreview}
+                            alt={`Imagen corporativa para ${platformLabel(item.platform)}`}
+                            className="max-h-96 w-full bg-slate-100 object-contain"
+                        />
+                    )}
+                </section>
+            )}
+
+            {(item.platform === 'linkedin' || item.platform === 'x') &&
+                item.generated_image_url?.startsWith('https://') && (
+                <section className="mt-5 overflow-hidden rounded-xl border border-indigo-200 bg-indigo-50/40">
+                    <div className="border-b border-indigo-100 px-4 py-3">
+                        <h4 className="text-sm font-semibold text-slate-800">
+                            Imagen preparada para {platformLabel(item.platform)}
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Recurso visual del borrador. No publicado.
+                        </p>
+                    </div>
+                    <a
+                        href={item.generated_image_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir imagen de la publicacion"
+                    >
+                        <img
+                            src={item.generated_image_url}
+                            alt={`Imagen preparada para ${platformLabel(item.platform)}`}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            className="max-h-96 w-full bg-slate-100 object-contain"
+                        />
+                    </a>
+                    {item.generated_image_prompt && (
+                        <div className="border-t border-indigo-100 px-4 py-3">
+                            <p className="text-xs font-semibold text-slate-600">
+                                Prompt de generacion
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap break-words text-xs text-slate-600">
+                                {item.generated_image_prompt}
+                            </p>
+                        </div>
+                    )}
+                </section>
+            )}
+
             {item.attachments.length > 0 && (
                 <section className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 className="mb-3 text-sm font-semibold text-slate-800">
@@ -309,11 +468,24 @@ export default function MotorApprovalCard({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         {item.attachments
-                            .filter((archivo) => archivo.url.startsWith('https://'))
+                            .filter((archivo) => typeof archivo.filename === 'string' && archivo.filename.trim().length > 0)
                             .map((archivo, index) => {
-                                const esImagen =
+                                const urlValida =
+                                    typeof archivo.url === 'string' &&
+                                    archivo.url.startsWith('https://')
+                                const esImagen = urlValida && (
                                     archivo.content_type?.startsWith('image/') ||
                                     /\.(png|jpe?g|gif|webp)$/i.test(archivo.filename)
+                                )
+                                const tipoArchivo =
+                                    archivo.content_type ||
+                                    (archivo.filename.includes('.')
+                                        ? archivo.filename.split('.').pop()?.toUpperCase()
+                                        : 'Archivo')
+                                const tamanoArchivo =
+                                    typeof archivo.size === 'number' && archivo.size >= 0
+                                        ? `${(archivo.size / 1024).toFixed(1)} KB`
+                                        : 'Tama?o desconocido'
 
                                 return (
                                     <div
@@ -343,8 +515,11 @@ export default function MotorApprovalCard({
                                             >
                                                 {archivo.filename}
                                             </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                {tipoArchivo} ? {tamanoArchivo}
+                                            </p>
 
-                                            <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                                            {urlValida && <div className="mt-2 flex flex-wrap gap-3 text-xs">
                                                 <a
                                                     href={archivo.url}
                                                     target="_blank"
@@ -362,7 +537,7 @@ export default function MotorApprovalCard({
                                                 >
                                                     Descargar / guardar
                                                 </a>
-                                            </div>
+                                            </div>}
                                         </div>
                                     </div>
                                 )
@@ -404,6 +579,39 @@ export default function MotorApprovalCard({
                             className="rounded-lg border border-orange-300 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
                         >
                             Solicitar ajustes
+                        </button>
+                    </div>
+                )}
+
+                {item.status === 'rechazado' && (
+                    <div className="mt-3 space-y-2">
+                        {recoveryDeadlineLabel ? (
+                            <>
+                                <p className="text-xs text-slate-600">
+                                    Fecha l?mite de recuperaci?n: {' '}
+                                    <span className="font-semibold">
+                                        {recoveryDeadlineLabel}
+                                    </span>
+                                </p>
+                                <p className="text-xs text-slate-600">
+                                    {canRecoverRejected
+                                        ? `Plazo disponible: ${recoveryRemainingDays} d?a(s) aproximadamente.`
+                                        : 'El plazo de recuperaci?n ha vencido.'}
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-xs text-amber-700">
+                                No hay una fecha de rechazo verificable.
+                                La recuperaci?n permanece bloqueada.
+                            </p>
+                        )}
+                        <button
+                            type="button"
+                            disabled={reviewDisabled || !canRecoverRejected}
+                            onClick={() => onRecoverRejected(item.id)}
+                            className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {reviewing ? 'Procesando...' : 'Recuperar para revisi?n'}
                         </button>
                     </div>
                 )}

@@ -4,6 +4,7 @@ export type ContentReviewStatus =
     | 'aprobado'
     | 'rechazado'
     | 'ajustes_solicitados'
+    | 'pendiente_revision'
 
 export interface ContentReviewRequest {
     estado: ContentReviewStatus
@@ -53,4 +54,23 @@ export async function reviewContent(
     }
 
     return response
+}
+
+
+/**
+ * Devuelve un contenido rechazado a pendiente de revisi?n.
+ * El Motor IA valida que el rechazo tenga menos de siete d?as.
+ * Esta operaci?n no aprueba ni publica el contenido.
+ */
+export async function recoverRejectedContent(
+    contentId: number,
+): Promise<ContentReviewResponse> {
+    if (!Number.isInteger(contentId) || contentId <= 0) {
+        throw new Error('Identificador de contenido invalido')
+    }
+
+    return reviewContent(contentId, {
+        estado: 'pendiente_revision',
+        observaciones_revision: null,
+    })
 }

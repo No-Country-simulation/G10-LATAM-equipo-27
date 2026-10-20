@@ -1,3 +1,4 @@
+import { apiRequest } from '../api/client'
 import { useEffect, useState } from 'react'
 
 
@@ -30,17 +31,10 @@ function AudienceHeatmap() {
 
             try {
 
-                const response = await fetch(
-                    (import.meta.env.VITE_MOTOR_API_URL || "http://127.0.0.1:8002").replace(/\/$/, "") + "/api/community/analytics"
-                )
-
-                if (!response.ok) {
-                    throw new Error(
-                        'No fue posible cargar la actividad de audiencia'
-                    )
-                }
-
-                const result: AnalyticsResponse = await response.json()
+                const result = (await apiRequest(
+                    '/api/v1/content-workflow/analytics',
+                    { cache: 'no-store' }
+                )) as AnalyticsResponse
 
                 setActivityData(result.activity_heatmap.data)
                 setHours(result.activity_heatmap.hours)

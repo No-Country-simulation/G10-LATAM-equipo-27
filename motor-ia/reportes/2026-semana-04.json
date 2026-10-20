@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "proyecto": "CloudEdTech",
+    "semana": "2026-semana-04",
+    "version_esquema": "1.0",
+    "generado_en": "2026-10-19T11:54:15+00:00",
+    "oci_storage": {
+      "bucket": "communitylab-assets",
+      "ruta": "activos/2026-semana-04/paquete-distribucion.json",
+      "subido": false,
+      "proveedor": "local",
+      "almacenamiento_local": true
+    }
+  },
+  "resumen_metricas": {
+    "total_mensajes": 1,
+    "total_aprobados": 0,
+    "total_descartados": 0,
+    "total_pendientes_curaduria": 1,
+    "sentimiento": {
+      "Neutral": 1
+    },
+    "temas_tendencia": [
+      {
+        "tema": "#integración",
+        "menciones": 1
+      },
+      {
+        "tema": "#prueba",
+        "menciones": 1
+      },
+      {
+        "tema": "#CloudEdTech",
+        "menciones": 1
+      }
+    ],
+    "segmentos": {
+      "DESARROLLADOR": 1
+    }
+  },
+  "activos_copywriting": {
+    "aprobados": [],
+    "descartados": [],
+    "pendientes_curaduria": [
+      {
+        "id_mensaje": 58,
+        "autor": "editionab",
+        "canal_origen": "#preguntas",
+        "comunidad": "Discord",
+        "semana": "2026-semana-04",
+        "fecha_envio": "2026-10-13T21:47:20+00:00",
+        "texto_original": "Prueba de integración CloudEdTech: comparto esta imagen para validar que los archivos adjuntos de Discord se registren correctamente en el Motor IA y aparezcan en Content Studio.",
+        "kpis": {
+          "relevancia": 45,
+          "sentimiento": "Neutral",
+          "temas_clave": "#integración #prueba #CloudEdTech",
+          "segmento": "DESARROLLADOR",
+          "razonamiento": "El mensaje solo indica una prueba de integración sin discusión profunda ni feedback detallado."
+        }
+      }
+    ]
+  }
+}

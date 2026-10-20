@@ -46,9 +46,17 @@ def procesar_actividad(paquete: dict) -> dict:
             vacias += 1
             continue
 
-        hash_mensaje = calcular_hash(
-            solicitud.origen_comunidad, interaccion.canal, interaccion.autor, texto
-        )
+        if interaccion.message_id:
+            hash_mensaje = calcular_hash(
+                "discord_message",
+                interaccion.guild_id or "",
+                interaccion.channel_id or "",
+                interaccion.message_id,
+            )
+        else:
+            hash_mensaje = calcular_hash(
+                solicitud.origen_comunidad, interaccion.canal, interaccion.autor, texto
+            )
         # la semana de cada mensaje sale de su propia fecha de envío, no de la del lote: así un
         # mensaje del 20 de septiembre dice Semana_01 aunque se guarde en la misma corrida que
         # uno del 1 de octubre. Si el mensaje no trae fecha, uso la semana del lote

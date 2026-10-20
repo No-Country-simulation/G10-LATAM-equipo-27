@@ -1,3 +1,14 @@
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import HTTPException
+from fastapi.responses import FileResponse
+from typing import Literal
+
+from app.content_workflow.brand_images import generar_pieza_corporativa
+
+from typing import Literal
+from app.users.models import User
 from urllib.parse import quote
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -13,7 +24,7 @@ from app.security.dependencies import require_role
 router = APIRouter(
     prefix="/api/v1/content-workflow",
     tags=["Content Workflow"],
-    dependencies=[Depends(require_role("community_manager"))],
+    dependencies=[Depends(require_role("admin", "community_manager"))],
 )
 
 
@@ -26,6 +37,39 @@ class RegenerarContenidoRequest(BaseModel):
     canal: str = Field(min_length=1, max_length=150)
     formato: str
     tono: str = "profesional"
+
+
+
+class EvaluarAlineacionMarcaRequest(BaseModel):
+    contenido: str
+    plataforma: Literal["linkedin", "x", "discord"]
+    origen: str = ""
+    contenido_id: int | None = Field(default=None, gt=0)
+
+
+@router.post("/brand-alignment")
+def evaluar_alineacion_marca_contenido(
+    solicitud: EvaluarAlineacionMarcaRequest,
+):
+    return solicitar_motor(
+        "POST",
+        "/api/content/brand-alignment",
+        datos=solicitud.model_dump(),
+    )
+
+
+class ConfirmarAlineacionMarcaRequest(BaseModel):
+    contenido_id: int = Field(gt=0)
+    contenido: str = Field(min_length=1)
+    plataforma: Literal["linkedin", "x", "discord"]
+    evaluacion: dict
+
+
+@router.post("/brand-alignment/commit")
+def confirmar_alineacion_marca(solicitud: ConfirmarAlineacionMarcaRequest):
+    return solicitar_motor(
+        "POST", "/api/content/brand-alignment/commit", datos=solicitud.model_dump()
+    )
 
 
 @router.post("/regenerate")
@@ -50,6 +94,30 @@ def guardar_borrador(solicitud: CrearContenidoRequest):
     return solicitar_motor(
         "POST",
         "/api/content/drafts",
+        solicitud.model_dump(),
+    )
+
+
+class ActualizarImagenBorradorRequest(BaseModel):
+    imagen_generada_url: str | None = None
+
+
+@router.patch("/drafts/{contenido_id}/image")
+def actualizar_imagen_borrador(
+    contenido_id: int,
+    solicitud: ActualizarImagenBorradorRequest,
+):
+    from fastapi import HTTPException
+
+    if contenido_id <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="El identificador debe ser positivo.",
+        )
+
+    return solicitar_motor(
+        "PATCH",
+        f"/api/content/{contenido_id}/image",
         solicitud.model_dump(),
     )
 
@@ -164,7 +232,7 @@ class PublicarContenidoDiscordRequest(BaseModel):
 @router.get("/messages/{interaccion_id}/origin")
 def consultar_origen_interaccion(
     interaccion_id: int,
-    usuario: User = Depends(require_role("community_manager")),
+    usuario: User = Depends(require_role("admin", "community_manager")),
 ):
     from fastapi import HTTPException
 
@@ -221,6 +289,29 @@ def consultar_mensajes_discord_para_recuperar(
     )
 
 
+class MensajeDiscordSeleccionadoRequest(BaseModel):
+    channel_id: str = Field(pattern=r"^\d{15,22}$")
+    message_id: str = Field(pattern=r"^\d{15,22}$")
+
+
+class RecuperarMensajesDiscordRequest(BaseModel):
+    mensajes: list[MensajeDiscordSeleccionadoRequest] = Field(
+        min_length=1,
+        max_length=20,
+    )
+
+
+@router.post("/discord/recover-selected")
+def recuperar_mensajes_discord(
+    solicitud: RecuperarMensajesDiscordRequest,
+):
+    """Envia al Motor IA los mensajes historicos seleccionados."""
+    return solicitar_motor(
+        "POST",
+        "/api/community/discord/recover-selected",
+        solicitud.model_dump(),
+    )
+
 @router.get("/discord-channels")
 def consultar_canales_discord():
     return solicitar_motor(
@@ -254,7 +345,6 @@ from sqlalchemy.orm import Session
 
 from app.audit.service import create_audit_log
 from app.database.dependencies import get_db
-from app.users.models import User
 
 
 class ConfirmacionManualRequest(BaseModel):
@@ -265,7 +355,7 @@ class ConfirmacionManualRequest(BaseModel):
 def confirmar_publicacion_manual_administrativa(
     contenido_id: int,
     solicitud: ConfirmacionManualRequest,
-    usuario: User = Depends(require_role("community_manager")),
+    usuario: User = Depends(require_role("admin", "community_manager")),
     db: Session = Depends(get_db),
 ):
     if contenido_id <= 0:
@@ -296,3 +386,115 @@ def confirmar_publicacion_manual_administrativa(
     )
 
     return resultado
+
+
+# CLOUDedTECH_READ_ONLY_MOTOR_ROUTES
+# Consultas autenticadas al Motor IA; no publican contenido.
+
+@router.get("/dashboard")
+def consultar_dashboard_motor():
+    return solicitar_motor("GET", "/api/community/dashboard")
+
+
+@router.get("/analytics")
+def consultar_analytics_motor():
+    return solicitar_motor("GET", "/api/community/analytics")
+
+
+@router.get("/messages")
+def consultar_mensajes_motor(limit: int | None = None):
+    if limit is not None:
+        if limit < 1 or limit > 500:
+            raise HTTPException(
+                status_code=422,
+                detail="El parametro limit debe estar entre 1 y 500",
+            )
+        return solicitar_motor("GET", f"/api/community/messages?limit={limit}")
+
+    return solicitar_motor("GET", "/api/community/messages")
+
+
+@router.get("/complaints")
+def consultar_quejas_motor():
+    return solicitar_motor("GET", "/api/community/complaints")
+
+
+@router.get("/content")
+def consultar_contenidos_motor():
+    return solicitar_motor("GET", "/api/content")
+
+
+class CorporateImageRequest(BaseModel):
+    plataforma: Literal["linkedin", "x", "discord"]
+    titulo: str = Field(min_length=1, max_length=65)
+    mensaje: str = Field(min_length=1, max_length=2000)
+
+
+def _corporate_image_dir() -> Path:
+    import os
+
+    configured = os.getenv("CLOUDEDTECH_IMAGE_DIR", "").strip()
+
+    if configured:
+        directory = Path(configured).expanduser()
+
+        if not directory.is_absolute():
+            raise RuntimeError(
+                "CLOUDEDTECH_IMAGE_DIR must be an absolute path"
+            )
+
+        return directory
+
+    return (
+        Path(__file__).resolve().parents[2]
+        / "generated_content_images"
+    )
+
+
+@router.post("/corporate-images")
+def create_corporate_image(solicitud: CorporateImageRequest):
+    _corporate_image_dir().mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    image_id = uuid4().hex
+    destination = _corporate_image_dir() / f"{image_id}.png"
+
+    generar_pieza_corporativa(
+        plataforma=solicitud.plataforma,
+        titulo=solicitud.titulo,
+        mensaje=solicitud.mensaje,
+        destino=destination,
+    )
+
+    return {
+        "image_id": image_id,
+        "image_url": (
+            f"/api/v1/content-workflow/corporate-images/{image_id}"
+        ),
+        "platform": solicitud.plataforma,
+        "generator": "corporate_template",
+    }
+
+
+@router.get("/corporate-images/{image_id}")
+def get_corporate_image(image_id: str):
+    if (
+        len(image_id) != 32
+        or any(character not in "0123456789abcdef" for character in image_id)
+    ):
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    image_path = _corporate_image_dir() / f"{image_id}.png"
+
+    if not image_path.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return FileResponse(
+        image_path,
+        media_type="image/png",
+        filename="cloudedtech-corporate.png",
+    )
+
+

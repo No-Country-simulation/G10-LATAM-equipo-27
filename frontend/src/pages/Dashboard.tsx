@@ -1,3 +1,4 @@
+﻿import { apiRequest } from '../api/client'
 import { useEffect, useState } from 'react'
 import {
   CheckCircle,
@@ -12,6 +13,7 @@ import {
 import KpiCard from '../components/KpiCard'
 import SentimentChart from '../charts/SentimentChart'
 import TopicsChart from '../charts/TopicsChart'
+import DashboardCommunityInsights from '../components/DashboardCommunityInsights'
 import SentimentEvolution from '../charts/SentimentEvolution'
 import AudienceHeatmap from '../charts/AudienceHeatmap'
 
@@ -44,26 +46,14 @@ function Dashboard() {
     try {
       setError(null)
 
-      const motorUrl = (
-        import.meta.env.VITE_MOTOR_API_URL ||
-        'http://127.0.0.1:8002'
-      ).replace(/\/$/, '')
-
-      const [dashboardResponse, analyticsResponse] = await Promise.all([
-        fetch(`${motorUrl}/api/community/dashboard`, {
+      const [data] = await Promise.all([
+        apiRequest('/api/v1/content-workflow/dashboard', {
           cache: 'no-store',
-        }),
-        fetch(`${motorUrl}/api/community/analytics`, {
+        }) as Promise<DashboardData>,
+        apiRequest('/api/v1/content-workflow/analytics', {
           cache: 'no-store',
         }),
       ])
-
-      if (!dashboardResponse.ok || !analyticsResponse.ok) {
-        throw new Error('No fue posible actualizar los datos del Motor IA')
-      }
-
-      const data: DashboardData = await dashboardResponse.json()
-      await analyticsResponse.json()
 
       setDashboardData(data)
       setAnalyticsVersion((version) => version + 1)
@@ -197,15 +187,7 @@ function Dashboard() {
       </div>
       
              
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
-        <h3 className="text-lg font-bold text-slate-900">
-          Historias destacadas
-        </h3>
-        <p className="mt-2 text-sm text-slate-500">
-          Esta sección se conectará con los mensajes destacados
-          del Motor IA durante la integración de Ingesta Discord.
-        </p>
-      </section>
+      <DashboardCommunityInsights refreshVersion={analyticsVersion} />
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
 

@@ -1,3 +1,4 @@
+import { apiRequest } from '../api/client'
 import {
   BriefcaseBusiness,
   CheckCircle,
@@ -12,12 +13,14 @@ import {
 
 import { useEffect, useRef, useState } from 'react'
 
-import { createContentDraft, generateComplaintResponse, regenerateContent } from '../api/contentWorkflow'
+import { createContentDraft, updateContentDraftImage, generateComplaintResponse, regenerateContent, generateCorporateImage, getCorporateImageBlob } from '../api/contentWorkflow'
+import { evaluateBrandAlignment, commitBrandAlignment } from '../api/contentWorkflow'
+import type { BrandAlignmentResponse } from '../api/contentWorkflow'
 import { getComplaintPublishPreview, publishComplaintResponse } from '../api/contentWorkflow'
 import type { ComplaintPublishPreview } from '../api/contentWorkflow'
 import { updateMessageWorkflow } from '../api/messageWorkflow'
+import { getMotorContents } from '../api/motorContent'
 import { getPublishedComplaintIds } from '../api/contentWorkflow'
-import { mockCommunityData } from '../data/mockCommunityData'
 
 type DiscordAttachment = {
   id: string
@@ -59,6 +62,10 @@ type WorkflowMessagesResponse = {
 type ContentFormat = 'linkedin' | 'x' | 'discord'
 
 type DraftState = {
+  brandEvaluation?: BrandAlignmentResponse
+  brandEvaluating?: boolean
+  brandError?: string
+  brandEvaluatedContent?: string
   interactionId?: number
   attachments?: DiscordAttachment[]
   content: string
@@ -67,9 +74,96 @@ type DraftState = {
   regenerating?: boolean
   error?: string
   savedId?: number
+  imageUrl?: string
+  imagePrompt?: string
+  corporateImagePreview?: string
+  corporateImageId?: string
+  corporateImageSourceContent?: string
+  corporateImageLoading?: boolean
+  corporateImageError?: string
 }
 
 function ContentStudio() {
+
+  async function handleGenerateCorporateImage(
+    platform: ContentFormat,
+    message: string,
+  ) {
+    const current = drafts[platform]
+
+    if (
+      !current.interactionId ||
+      !message.trim() ||
+      current.submitted ||
+      current.submitting ||
+      current.savedId ||
+      current.corporateImageLoading
+    ) {
+      return
+    }
+
+    setDrafts((previous) => ({
+      ...previous,
+      [platform]: {
+        ...previous[platform],
+        corporateImageLoading: true,
+        corporateImageError: '',
+      },
+    }))
+
+    try {
+      const result = await generateCorporateImage({
+        plataforma: platform,
+        titulo: 'CloudEdTech',
+        mensaje: message.trim().slice(0, 2000),
+      })
+
+      const blob = await getCorporateImageBlob(result.image_url)
+      const preview = URL.createObjectURL(blob)
+
+      setDrafts((previous) => {
+        const existing = previous[platform]
+
+        if (
+          existing.interactionId !== current.interactionId ||
+          existing.content !== current.content
+        ) {
+          URL.revokeObjectURL(preview)
+          return previous
+        }
+
+        if (existing.corporateImagePreview) {
+          URL.revokeObjectURL(existing.corporateImagePreview)
+        }
+
+        return {
+          ...previous,
+          [platform]: {
+            ...existing,
+            corporateImagePreview: preview,
+            corporateImageId: result.image_id,
+            corporateImageSourceContent: current.content,
+            corporateImageLoading: false,
+            corporateImageError: '',
+          },
+        }
+      })
+    } catch (error) {
+      setDrafts((previous) => ({
+        ...previous,
+        [platform]: {
+          ...previous[platform],
+          corporateImageLoading: false,
+          corporateImageError:
+            error instanceof Error
+              ? error.message
+              : 'No fue posible generar la imagen.',
+        },
+      }))
+    }
+  }
+
+
   const [workflowMessages, setWorkflowMessages] =
     useState<WorkflowMessage[]>([])
   const [selectedWorkflowId, setSelectedWorkflowId] =
@@ -85,22 +179,10 @@ function ContentStudio() {
       setWorkflowError('')
 
       try {
-        const motorApiUrl = (
-          import.meta.env.VITE_MOTOR_API_URL ||
-          'http://127.0.0.1:8002'
-        ).replace(/\/$/, '')
-
-        const response = await fetch(
-          `${motorApiUrl}/api/community/messages?limit=500`,
-          { signal: controller.signal },
-        )
-
-        if (!response.ok) {
-          throw new Error('No se pudo consultar el Motor IA')
-        }
-
-        const data: WorkflowMessagesResponse = await response.json()
-
+        const data = (await apiRequest(
+          '/api/v1/content-workflow/messages?limit=500',
+          { signal: controller.signal }
+        )) as WorkflowMessagesResponse
         const messages = data.messages
           .filter(
             (item) =>
@@ -124,7 +206,7 @@ function ContentStudio() {
           setSelectedWorkflowId((current) =>
             messages.some((item) => item.interactionId === current)
               ? current
-              : messages[0]?.interactionId ?? null,
+              : null,
           )
         }
       } catch (error) {
@@ -153,7 +235,7 @@ function ContentStudio() {
     ) ?? null
 
 
-  const generatedContent = mockCommunityData.content_studio[0]
+
 
 
   const [activeComplaint, setActiveComplaint] = useState<number | null>(null)
@@ -241,6 +323,7 @@ function ContentStudio() {
   const [complaints, setComplaints] = useState<Complaint[]>([])
   const [complaintsLoading, setComplaintsLoading] = useState(true)
   const [complaintsError, setComplaintsError] = useState('')
+  const [complaintHistoryVerified, setComplaintHistoryVerified] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -249,30 +332,42 @@ function ContentStudio() {
       try {
         setComplaintsLoading(true)
         setComplaintsError('')
+        setComplaintHistoryVerified(false)
 
-        const motorApiUrl = (
-          import.meta.env.VITE_MOTOR_API_URL ||
-          'http://127.0.0.1:8002'
-        ).replace(/\/$/, '')
-
-        const response = await fetch(
-          `${motorApiUrl}/api/community/complaints`,
+        const data = (await apiRequest(
+          '/api/v1/content-workflow/complaints',
           { signal: controller.signal }
-        )
+        )) as { items: Complaint[] }
+        let publishedIds: number[] = []
+        let historialDisponible = true
 
-        if (!response.ok) {
-          throw new Error(`Error HTTP ${response.status}`)
+        try {
+          publishedIds = await getPublishedComplaintIds()
+        } catch (historialError) {
+          historialDisponible = false
+          console.error(
+            'No fue posible consultar el historial de respuestas publicadas:',
+            historialError,
+          )
         }
 
-        const data: { items: Complaint[] } = await response.json()
-
-        const publishedIds = await getPublishedComplaintIds()
         const publishedSet = new Set(publishedIds)
+        if (!controller.signal.aborted) {
+          setComplaintHistoryVerified(historialDisponible)
+        }
 
         if (!controller.signal.aborted) {
           setComplaints(
-            data.items.filter((complaint) => !publishedSet.has(complaint.id))
+            (data.items ?? []).filter(
+              (complaint) => !publishedSet.has(complaint.id),
+            ),
           )
+
+          if (!historialDisponible) {
+            setComplaintsError(
+              'Las quejas se recuperaron, pero no se pudo verificar el historial de respuestas publicadas. No envíes respuestas hasta restablecer esa consulta.',
+            )
+          }
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -302,39 +397,14 @@ function ContentStudio() {
   const [showDiscordFiles, setShowDiscordFiles] =
     useState(false)
 
-  const [drafts, setDrafts] = useState<
-    Record<ContentFormat, DraftState>
-  >({
-    linkedin: {
-      content: generatedContent.content,
-      submitted: false,
-    },
-
-    x: {
-      content: `💬 Desde nuestra comunidad:
-
-${''}
-
-#CloudEdTech`,
-      submitted: false,
-    },
-
-    discord: {
-      content: `🚀 ¡Tenemos una nueva historia para compartir!
-
-${''}
-
-💡 Seguimos construyendo y aprendiendo juntos como comunidad.
-
-#CloudEdTech #Comunidad`,
-      submitted: false,
-    },
+  const [drafts, setDrafts] = useState<Record<ContentFormat, DraftState>>({
+    linkedin: { content: '', submitted: false },
+    x: { content: '', submitted: false },
+    discord: { content: '', submitted: false },
   })
 
   const discordFiles = (drafts.discord.attachments ?? []).filter(
-    (file) =>
-      file.filename.trim().length > 0 &&
-      /^https:\/\//i.test(file.url),
+    (file) => typeof file.filename === 'string' && file.filename.trim().length > 0,
   )
 
   const formatDiscordFileSize = (bytes: number) => {
@@ -348,13 +418,28 @@ ${''}
     format: ContentFormat,
     content: string,
   ) => {
-    setDrafts((current) => ({
+    setDrafts((current) => {
+      if (
+        current[format].savedId ||
+        current[format].submitted ||
+        current[format].submitting
+      ) {
+        return current
+      }
+
+      return {
       ...current,
       [format]: {
         ...current[format],
         content,
+        corporateImageId: undefined,
+        corporateImageSourceContent: undefined,
+        brandEvaluation: undefined,
+        brandEvaluatedContent: undefined,
+        brandError: '',
       },
-    }))
+    }
+    })
   }
 
   const prepareWorkflowContent = (chosenMessage?: WorkflowMessage) => {
@@ -367,6 +452,7 @@ ${''}
     const newDrafts: Record<ContentFormat, DraftState> = {
       linkedin: {
         interactionId: message.interactionId,
+        attachments: [...message.attachments],
         content: `Una conversacion de nuestra comunidad nos invita a reflexionar:
 
 "${source}"
@@ -380,6 +466,7 @@ En CloudEdTech valoramos las experiencias compartidas y el aprendizaje colaborat
       },
       x: {
         interactionId: message.interactionId,
+        attachments: [...message.attachments],
         content: `Desde nuestra comunidad: ${source}`,
         submitted: false,
       },
@@ -398,6 +485,74 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
     setDrafts(newDrafts)
     setActiveFormat('linkedin')
     setShowDiscordFiles(false)
+  }
+
+  const handleEvaluateBrand = async (format: ContentFormat) => {
+    const draft = drafts[format]
+    const content = draft.content.trim()
+
+    if (
+      !draft.interactionId ||
+      !content ||
+      draft.brandEvaluating ||
+      draft.submitting
+    ) return
+
+    const source = workflowMessages.find(
+      (item) => item.interactionId === draft.interactionId,
+    )
+
+    setDrafts((current) => ({
+      ...current,
+      [format]: {
+        ...current[format],
+        brandEvaluating: true,
+        brandError: '',
+        brandEvaluation: undefined,
+      },
+    }))
+
+    try {
+      const evaluation = await evaluateBrandAlignment({
+        contenido: content,
+        plataforma: format,
+        origen: source?.content ?? '',
+        ...(draft.savedId ? { contenido_id: draft.savedId } : {}),
+      })
+
+      setDrafts((current) => {
+        if (current[format].content.trim() !== content) return current
+
+        return {
+          ...current,
+          [format]: {
+            ...current[format],
+            brandEvaluation: evaluation,
+            brandEvaluatedContent: content,
+            brandEvaluating: false,
+          },
+        }
+      })
+    } catch (error) {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          brandError: error instanceof Error
+            ? error.message
+            : 'No fue posible evaluar la marca.',
+          brandEvaluating: false,
+        },
+      }))
+    } finally {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          brandEvaluating: false,
+        },
+      }))
+    }
   }
 
   const handleCopy = async (format: ContentFormat) => {
@@ -419,6 +574,36 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
     const content = draft.content.trim()
 
     if (draft.submitted || submittingRef.current.has(format)) return
+
+    if (draft.corporateImageLoading) {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          error: 'Espera a que termine la generacion de la imagen corporativa.',
+        },
+      }))
+      return
+    }
+
+    if (
+      draft.corporateImageId &&
+      draft.corporateImageSourceContent !== draft.content
+    ) {
+      setDrafts((current) => ({
+        ...current,
+        [format]: {
+          ...current[format],
+          error: 'El texto cambio despues de generar la imagen. Genera una nueva imagen antes de enviar.',
+        },
+      }))
+      return
+    }
+
+    if (!draft.interactionId) {
+      setDrafts(current => ({ ...current, [format]: { ...current[format], error: 'Selecciona una interacción real de Discord.' } }))
+      return
+    }
 
     if (!draft.savedId && !content) {
       setDrafts((current) => ({
@@ -442,6 +627,7 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
       return
     }
 
+
     submittingRef.current.add(format)
 
     setDrafts((current) => ({
@@ -464,6 +650,10 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
           contenido: content,
           tono: 'profesional',
           tipo_contenido: 'publicacion',
+          imagen_generada_url: draft.corporateImageId
+            ? `/api/v1/content-workflow/corporate-images/${draft.corporateImageId}`
+            : null,
+          imagen_generada_prompt: null,
         })
 
         savedId = result.id
@@ -477,6 +667,50 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
         }))
       }
 
+      if (!savedId) {
+        throw new Error(
+          'No se obtuvo un identificador valido del borrador.'
+        )
+      }
+
+      // Sincronizar la imagen elegida antes de enviar a Aprobaciones.
+      // Si el borrador ya existe, se actualiza sin crear duplicados.
+      const selectedImageUrl = draft.corporateImageId
+        ? `/api/v1/content-workflow/corporate-images/${draft.corporateImageId}`
+        : null
+
+      await updateContentDraftImage(savedId, selectedImageUrl)
+
+      const persistedContents = await getMotorContents()
+      const persistedDraft = persistedContents.find(
+        (item) => item.id === savedId
+      )
+
+      if (!persistedDraft) {
+        throw new Error(
+          `El borrador #${savedId} no aparece en el Motor IA. ` +
+          'No se confirmo su envio a Aprobaciones.'
+        )
+      }
+
+      if (persistedDraft.estado !== 'pendiente_revision') {
+        throw new Error(
+          `El borrador #${savedId} no esta pendiente de revision.`
+        )
+      }
+
+      if (draft.corporateImageId) {
+        const expectedImageUrl =
+          `/api/v1/content-workflow/corporate-images/${draft.corporateImageId}`
+
+        if (persistedDraft.imagen_generada_url !== expectedImageUrl) {
+          throw new Error(
+            `La imagen corporativa no quedo guardada en el borrador #${savedId}. ` +
+            'No se envio a Aprobaciones.'
+          )
+        }
+      }
+
       if (draft.interactionId) {
         await updateMessageWorkflow(draft.interactionId, 'en_aprobacion')
         setWorkflowMessages((current) =>
@@ -487,6 +721,22 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
         )
       }
 
+      // Solo la última evaluación del texto efectivamente enviado cuenta en Analytics.
+      // Si falla el registro, el envío sigue siendo válido; el usuario puede reevaluar.
+      let alignmentWarning = ''
+      if (savedId && draft.brandEvaluation && draft.brandEvaluatedContent === content) {
+        try {
+          await commitBrandAlignment({
+            contenido_id: savedId,
+            contenido: content,
+            plataforma: format,
+            evaluacion: draft.brandEvaluation,
+          })
+        } catch (error) {
+          alignmentWarning = error instanceof Error ? error.message : 'No se pudo registrar la evaluación final.'
+        }
+      }
+
       setDrafts((current) => ({
         ...current,
         [format]: {
@@ -494,7 +744,7 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
           submitted: true,
           submitting: false,
           savedId,
-          error: '',
+          error: alignmentWarning,
         },
       }))
     } catch (error) {
@@ -586,6 +836,9 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
             ...actual,
             content: result.contenido,
             regenerating: false,
+            brandEvaluation: undefined,
+            brandEvaluatedContent: undefined,
+            brandError: '',
             error: '',
           },
         }
@@ -726,6 +979,11 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
               Tema: {selectedWorkflowMessage.topic} |
               Relevancia: {selectedWorkflowMessage.relevance}/100
             </p>
+            {selectedWorkflowMessage.attachments.length > 0 && (
+              <p className="mt-2 break-all text-xs text-slate-600">
+                Adjuntos ({selectedWorkflowMessage.attachments.length}): {selectedWorkflowMessage.attachments.map(f => f.filename).join(', ')}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => prepareWorkflowContent()}
@@ -1001,23 +1259,196 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
                                 {file.filename}
                               </p>
                               <p className="mt-0.5 text-xs text-slate-400">
-                                {file.content_type || 'Archivo'} · {formatDiscordFileSize(file.size)}
+                                {file.content_type || file.filename.split('.').pop()?.toUpperCase() || 'Archivo'} · {formatDiscordFileSize(file.size)}
                               </p>
                             </div>
 
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-lg border border-orange-200 px-3 py-2 text-xs font-semibold text-orange-600 transition hover:bg-orange-50"
-                            >
-                              Abrir / descargar
-                            </a>
+                            <span className="text-xs text-slate-500">Descarga disponible en Aprobaciones</span>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Evaluaci?n de alineación de marca */}
+                <div className="mt-4 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleEvaluateBrand(format.id)}
+                    disabled={
+                      draft.brandEvaluating ||
+                      !draft.content.trim() ||
+                      !draft.interactionId ||
+                      draft.submitting
+                    }
+                    className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Sparkles size={16} />
+                    {draft.brandEvaluating
+                      ? 'Evaluando marca...'
+                      : 'Evaluar alineación de marca'}
+                  </button>
+
+                  {draft.brandError && (
+                    <p className="text-sm text-rose-600">
+                      {draft.brandError}
+                    </p>
+                  )}
+
+                  {draft.brandEvaluation &&
+                    draft.brandEvaluatedContent === draft.content.trim() && (
+                      <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-bold text-slate-900">
+                            Alineación de marca
+                          </h4>
+                          <span className="text-xl font-bold text-orange-600">
+                            {draft.brandEvaluation.puntuacion}/100
+                          </span>
+                        </div>
+
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-orange-500"
+                            style={{
+                              width: `${draft.brandEvaluation.puntuacion}%`,
+                            }}
+                          />
+                        </div>
+
+                        <div className="grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                          <span>
+                            Tono y voz: {draft.brandEvaluation.tono_y_voz}%
+                          </span>
+                          <span>
+                            Estructura: {draft.brandEvaluation.estructura_y_claridad}%
+                          </span>
+                          <span>
+                            Valores: {draft.brandEvaluation.valores_de_marca}%
+                          </span>
+                          <span>
+                            Credibilidad: {draft.brandEvaluation.seguridad_y_credibilidad}%
+                          </span>
+                        </div>
+
+                        <p className="text-sm text-slate-700">
+                          {draft.brandEvaluation.justificacion}
+                        </p>
+
+                        {draft.brandEvaluation.fortalezas.length > 0 && (
+                          <div>
+                            <p className="mb-1 text-xs font-bold text-emerald-700">
+                              Fortalezas
+                            </p>
+                            <ul className="list-inside list-disc text-sm text-slate-700">
+                              {draft.brandEvaluation.fortalezas.map(
+                                (item, index) => (
+                                  <li key={index}>{item}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                        {draft.brandEvaluation.mejoras.length > 0 && (
+                          <div>
+                            <p className="mb-1 text-xs font-bold text-amber-700">
+                              Recomendaciones
+                            </p>
+                            <ul className="list-inside list-disc text-sm text-slate-700">
+                              {draft.brandEvaluation.mejoras.map(
+                                (item, index) => (
+                                  <li key={index}>{item}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                </div>
+
+                {true && (
+                  <section className="mt-5 rounded-xl border border-indigo-200 bg-indigo-50/40 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-800">
+                          Imagen corporativa para {format.name}
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Genera una pieza con el isotipo oficial de CloudEdTech. No utiliza IA generativa.
+                        </p>
+                      </div>
+                      <Sparkles size={18} className="text-indigo-500" />
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={
+                        !draft.interactionId ||
+                        !draft.content.trim() ||
+                        draft.submitted ||
+                        draft.submitting ||
+                        Boolean(draft.savedId) ||
+                        Boolean(draft.corporateImageLoading)
+                      }
+                      onClick={() =>
+                        void handleGenerateCorporateImage(
+                          format.id,
+                          draft.content,
+                        )
+                      }
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Sparkles size={17} />
+                      {draft.corporateImageLoading
+                        ? 'Creando imagen corporativa...'
+                        : 'Crear pieza corporativa'}
+                    </button>
+
+                    {draft.corporateImageError && (
+                      <p className="mt-2 text-xs text-red-600">
+                        {draft.corporateImageError}
+                      </p>
+                    )}
+
+                    {draft.corporateImagePreview &&
+                      draft.corporateImageId &&
+                      draft.corporateImageSourceContent === draft.content && (
+                        <div className="mt-4 rounded-lg border border-orange-200 bg-white p-3">
+                          <img
+                            src={draft.corporateImagePreview}
+                            alt={`Imagen corporativa para ${format.name}`}
+                            className="max-h-72 w-full rounded-lg object-contain"
+                          />
+                          <button
+                            type="button"
+                            disabled={draft.submitted || draft.submitting}
+                            onClick={() => {
+                              setDrafts((current) => ({
+                                ...current,
+                                [format.id]: {
+                                  ...current[format.id],
+                                  corporateImageId: undefined,
+                                  corporateImagePreview: undefined,
+                                  corporateImageSourceContent: undefined,
+                                  corporateImageError: '',
+                                },
+                              }))
+                            }}
+                            className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            Eliminar imagen
+                          </button>
+                        </div>
+                      )}
+
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      La imagen se adjunta al texto editable y se enviara
+                      a Aprobaciones si decides conservarla.
+                    </p>
+                  </section>
                 )}
 
                 {/* Acciones auxiliares */}
@@ -1040,7 +1471,7 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
 
                   <button
                     type="button"
-                    disabled={draft.submitted || draft.submitting || draft.regenerating || Boolean(draft.savedId)}
+                    disabled={draft.submitted || draft.submitting || draft.regenerating || !draft.interactionId || Boolean(draft.savedId)}
                     onClick={() =>
                       handleRegenerate(format.id)
                     }
@@ -1055,10 +1486,10 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
                 <button
                   type="button"
                   onClick={() => handleSubmit(format.id)}
-                  disabled={draft.submitted || draft.submitting || draft.regenerating || (format.id === 'x' && [...draft.content].length > 280)}
+                  disabled={draft.submitted || draft.submitting || draft.regenerating || draft.corporateImageLoading || !draft.interactionId || !draft.content.trim() || (format.id === 'x' && [...draft.content].length > 280)}
                   className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${draft.submitted
                     ? 'cursor-not-allowed bg-green-50 text-green-700'
-                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                    : 'bg-orange-500 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:hover:bg-slate-200'
                     }`}
                 >
                   {draft.submitted ? (
@@ -1451,6 +1882,7 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
               <button
                 type="button"
                 disabled={
+                  !complaintHistoryVerified ||
                   complaintPublishing ||
                   complaintGenerating ||
                   complaintDestinationLoading ||
@@ -1469,6 +1901,7 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
 
                   if (
                     interactionId === null ||
+                    !complaintHistoryVerified ||
                     !destination?.ready ||
                     destination.interaccion_id !== interactionId ||
                     !respuesta ||
@@ -1505,6 +1938,12 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
                       `Publicado en Discord. Canal: #${destination.channel_name}. ` +
                       `ID del mensaje: ${resultado.discord_message_id}`
                     )
+                    setComplaints((actuales) =>
+                      actuales.filter((queja) => queja.id !== interactionId)
+                    )
+
+                    activeComplaintRef.current = null
+                    setActiveComplaint(null)
                   } catch (error) {
                     setComplaintPublishError(
                       (error instanceof Error ? error.message : 'Error de publicacion.') +
@@ -1642,3 +2081,5 @@ Desde CloudEdTech queremos continuar esta conversacion con la comunidad.`,
 }
 
 export default ContentStudio
+
+

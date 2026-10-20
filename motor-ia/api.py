@@ -8,6 +8,7 @@ import secrets
 from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel, Field
 
+from evaluador_marca import evaluar_alineacion_marca
 from servicio_contenido import generar_contenido
 
 from publicacion_discord import (
@@ -26,6 +27,8 @@ from base_datos import (
     actualizar_estado_contenido,
     actualizar_contenido,
 )
+from base_datos import guardar_evaluacion_marca
+from base_datos import obtener_estadisticas_alineacion_marca
 
 from servicio_dashboard import (
     obtener_dashboard,
@@ -124,6 +127,10 @@ def validar_token_interno(
 
 
 
+
+
+
+
 class SolicitudGuardarBorrador(BaseModel):
     interaccion_id: int | None = Field(default=None, gt=0)
     plataforma: Literal["linkedin", "x", "discord"]
@@ -133,6 +140,8 @@ class SolicitudGuardarBorrador(BaseModel):
     hashtags: list[str] = []
     tono: str = "profesional"
     tipo_contenido: str = "publicacion"
+    imagen_generada_url: str | None = Field(default=None, max_length=2048)
+    imagen_generada_prompt: str | None = Field(default=None, max_length=4000)
 
 
 @app.post(
@@ -168,6 +177,8 @@ def guardar_borrador_contenido(
         tono=solicitud.tono,
         plataforma=solicitud.plataforma,
         tipo_contenido=solicitud.tipo_contenido,
+        imagen_generada_url=solicitud.imagen_generada_url,
+        imagen_generada_prompt=solicitud.imagen_generada_prompt,
     )
 
     if not contenido_id:
@@ -181,6 +192,59 @@ def guardar_borrador_contenido(
         "estado": "pendiente_revision",
         "message": "Borrador enviado a revision",
     }
+
+
+
+class SolicitudAlineacionMarca(BaseModel):
+    contenido: str = Field(min_length=1)
+    plataforma: Literal["linkedin", "x", "discord"]
+    origen: str = ""
+    contenido_id: int | None = Field(default=None, gt=0)
+
+
+@app.post(
+    "/api/content/brand-alignment",
+    dependencies=[Depends(validar_token_interno)],
+)
+def evaluar_marca_contenido(solicitud: SolicitudAlineacionMarca):
+    resultado = evaluar_alineacion_marca(
+        contenido=solicitud.contenido,
+        plataforma=solicitud.plataforma,
+        origen=solicitud.origen,
+    )
+
+    # Las evaluaciones preliminares no se registran en Analytics.
+    # Solo el endpoint /brand-alignment/commit confirma la version final.
+    resultado["registrada"] = False
+
+    return resultado
+
+
+class ConfirmarAlineacionMarcaRequest(BaseModel):
+    contenido_id: int = Field(gt=0)
+    contenido: str = Field(min_length=1)
+    plataforma: Literal["linkedin", "x", "discord"]
+    evaluacion: dict
+
+
+@app.post("/api/content/brand-alignment/commit", dependencies=[Depends(validar_token_interno)])
+def confirmar_alineacion_marca(solicitud: ConfirmarAlineacionMarcaRequest):
+    # No se ejecuta una nueva evaluación; se confirma la última realizada.
+    campos = ("tono_y_voz", "estructura_y_claridad", "valores_de_marca", "seguridad_y_credibilidad")
+    try:
+        if any(type(solicitud.evaluacion.get(c)) is not int or not 0 <= solicitud.evaluacion[c] <= 100 for c in campos):
+            raise ValueError("Dimensiones de marca invalidas")
+        if type(solicitud.evaluacion.get("puntuacion")) is not int:
+            raise ValueError("Puntuacion invalida")
+        if solicitud.evaluacion["puntuacion"] != round(sum(solicitud.evaluacion[c] for c in campos) / 4):
+            raise ValueError("Puntuacion incoherente")
+        evaluacion_id = guardar_evaluacion_marca(
+            contenido=solicitud.contenido, plataforma=solicitud.plataforma,
+            evaluacion=solicitud.evaluacion, contenido_id=solicitud.contenido_id,
+        )
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"registrada": True, "evaluacion_id": evaluacion_id}
 
 
 class SolicitudContenido(BaseModel):
@@ -262,11 +326,51 @@ def obtener_contenidos(estado: str | None = None):
         "items": listar_contenidos(estado=estado),
     }
 
+class ActualizacionImagenContenido(BaseModel):
+    imagen_generada_url: str | None = None
+
+
+@app.patch(
+    "/api/content/{contenido_id}/image",
+    dependencies=[Depends(validar_token_interno)],
+)
+def actualizar_imagen_borrador(
+    contenido_id: int,
+    solicitud: ActualizacionImagenContenido,
+):
+    from base_datos import actualizar_imagen_contenido
+
+    try:
+        actualizado = actualizar_imagen_contenido(
+            contenido_id=contenido_id,
+            imagen_generada_url=solicitud.imagen_generada_url,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        ) from error
+
+    if not actualizado:
+        raise HTTPException(
+            status_code=409,
+            detail="El borrador no existe o no esta pendiente de revision.",
+        )
+
+    return {
+        "id": contenido_id,
+        "estado": "pendiente_revision",
+        "imagen_generada_url": solicitud.imagen_generada_url,
+        "message": "Imagen del borrador actualizada correctamente.",
+    }
+
+
 class ActualizacionEstadoContenido(BaseModel):
     estado: Literal[
         "aprobado",
         "rechazado",
         "ajustes_solicitados",
+        "pendiente_revision",
     ]
     observaciones_revision: str | None = None
 
@@ -359,6 +463,130 @@ async def vista_previa_recuperacion_discord(
         ) from error
 
 
+class MensajeDiscordParaRecuperar(BaseModel):
+    channel_id: str = Field(pattern=r"^\d{15,22}$")
+    message_id: str = Field(pattern=r"^\d{15,22}$")
+
+
+class SolicitudRecuperacionDiscord(BaseModel):
+    mensajes: list[MensajeDiscordParaRecuperar] = Field(
+        min_length=1,
+        max_length=20,
+    )
+
+
+@app.post(
+    "/api/community/discord/recover-selected",
+    dependencies=[Depends(validar_token_interno)],
+)
+async def recuperar_mensajes_discord_seleccionados(
+    solicitud: SolicitudRecuperacionDiscord,
+):
+    """Recupera mensajes seleccionados sin publicar en Discord."""
+    import asyncio
+    import discord
+
+    from armar_json_bot_python import construir_paquete
+    from procesamiento import procesar_actividad
+    from publicacion_discord import CANALES_AUTORIZADOS
+
+    for item in solicitud.mensajes:
+        if item.channel_id not in CANALES_AUTORIZADOS:
+            raise HTTPException(
+                status_code=422,
+                detail="Se solicito un canal no autorizado.",
+            )
+
+    seleccion = {
+        (item.channel_id, item.message_id)
+        for item in solicitud.mensajes
+    }
+
+    if len(seleccion) != len(solicitud.mensajes):
+        raise HTTPException(
+            status_code=422,
+            detail="La seleccion contiene mensajes repetidos.",
+        )
+
+    token = os.getenv("DISCORD_TOKEN") or os.getenv("DISCORD_BOT_TOKEN")
+
+    if not token:
+        raise HTTPException(
+            status_code=503,
+            detail="Token de Discord no configurado.",
+        )
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+    intents.guilds = True
+
+    client = discord.Client(intents=intents)
+    encontrados = []
+    no_encontrados = []
+
+    @client.event
+    async def on_ready():
+        try:
+            for channel_id, message_id in seleccion:
+                try:
+                    canal = client.get_channel(int(channel_id))
+                    if canal is None:
+                        canal = await client.fetch_channel(int(channel_id))
+
+                    mensaje = await canal.fetch_message(int(message_id))
+
+                    if mensaje.author.bot or not mensaje.content.strip():
+                        no_encontrados.append(message_id)
+                        continue
+
+                    encontrados.append(mensaje)
+
+                except (discord.NotFound, discord.Forbidden):
+                    no_encontrados.append(message_id)
+        finally:
+            await client.close()
+
+    try:
+        await asyncio.wait_for(client.start(token), timeout=90)
+    except asyncio.TimeoutError as error:
+        raise HTTPException(
+            status_code=504,
+            detail="Tiempo de espera agotado al consultar Discord.",
+        ) from error
+    except discord.DiscordException as error:
+        raise HTTPException(
+            status_code=502,
+            detail="No fue posible consultar los mensajes de Discord.",
+        ) from error
+    finally:
+        if not client.is_closed():
+            await client.close()
+
+    resultado = {
+        "status": "exito",
+        "total_solicitados": len(seleccion),
+        "encontrados": len(encontrados),
+        "no_encontrados": no_encontrados,
+        "guardadas_nuevas": 0,
+        "repetidas_omitidas": 0,
+    }
+
+    if encontrados:
+        paquete = construir_paquete(encontrados)
+        if paquete:
+            procesamiento = procesar_actividad(paquete)
+
+            if procesamiento.get("status") != "exito":
+                raise HTTPException(
+                    status_code=500,
+                    detail="No fue posible procesar los mensajes recuperados.",
+                )
+
+            resultado["guardadas_nuevas"] = procesamiento["guardadas_nuevas"]
+            resultado["repetidas_omitidas"] = procesamiento["repetidas_omitidas"]
+
+    return resultado
+
 class SolicitudPublicacionDiscord(BaseModel):
     canal_id: str
     modo: str = "publicacion"
@@ -419,18 +647,113 @@ async def publicar_contenido(
         ) from error
 
 
+
+def normalizar_temas_enoc(valor):
+    """Convierte listas JSON o texto separado por comas en temas."""
+    import json
+
+    if valor is None:
+        return []
+
+    if isinstance(valor, str):
+        try:
+            valor = json.loads(valor)
+        except (ValueError, TypeError):
+            pass
+
+    if isinstance(valor, list):
+        return [
+            str(tema).strip()
+            for tema in valor
+            if str(tema).strip()
+        ]
+
+    return [
+        tema.strip()
+        for tema in str(valor).split(",")
+        if tema.strip()
+    ]
+
+
 @app.get("/api/community/analytics")
 def analytics():
-    return {
-    "sentiment": {
-        "distribution": obtener_distribucion_sentimiento(),
-        "evolution": obtener_evolucion_sentimiento(),
-    },
-    "topics": obtener_distribucion_temas(),
-    "activity_heatmap": obtener_actividad_audiencia(),
-    "hashtags": obtener_hashtags(),
-}
-# Generación de respuestas a quejas de Discord
+    resultado = {
+        "sentiment": {
+            "distribution": obtener_distribucion_sentimiento(),
+            "evolution": obtener_evolucion_sentimiento(),
+        },
+        "topics": obtener_distribucion_temas(),
+        "activity_heatmap": obtener_actividad_audiencia(),
+        "hashtags": obtener_hashtags(),
+        "brand_alignment": obtener_estadisticas_alineacion_marca(),
+    }
+
+    # Datos adicionales de solo lectura; no alteran los KPI locales.
+    try:
+        from collections import Counter
+        from integracion_lectura_supabase import obtener_analisis_vinculados
+
+        datos = obtener_analisis_vinculados()
+        items = datos["items"]
+
+        resultado["integration"] = {
+            "available": True,
+            "total_enoc": datos["total_enoc"],
+            "total_vinculados": datos["total_vinculados"],
+            "total_excluidos": datos["total_excluidos"],
+            "decisiones_ia": dict(Counter(
+                str(item["decision_ia"]) for item in items
+            )),
+            "estados_hitl": dict(Counter(
+                str(item["estado_revision"]) for item in items
+            )),
+            "sentimientos_enoc": dict(Counter(
+                str(item["sentimiento"]).strip()
+                for item in items
+            )),
+            "temas_enoc": dict(Counter(
+                tema
+                for item in items
+                for tema in normalizar_temas_enoc(item.get("temas_clave"))
+            )),
+            "relevancia_enoc": {
+                "registros": len([
+                    item for item in items
+                    if item.get("relevancia") is not None
+                ]),
+                "promedio": round(
+                    sum(
+                        float(item["relevancia"])
+                        for item in items
+                        if item.get("relevancia") is not None
+                    ) / max(1, sum(
+                        item.get("relevancia") is not None
+                        for item in items
+                    )),
+                    2,
+                ),
+            },
+        }
+    except Exception:
+        resultado["integration"] = {"available": False}
+
+    # Estadisticas integradas de mensajes verificados.
+    # Ante un fallo de Supabase, conservar indicadores locales.
+    try:
+        from estadisticas_integradas import obtener_estadisticas_integradas
+
+        estadisticas = obtener_estadisticas_integradas()
+        resultado["sentiment"]["distribution"] = (
+            estadisticas["sentiment"]["distribution"]
+        )
+        resultado["topics"] = estadisticas["topics"]
+        resultado["integration"]["estadisticas_combinadas"] = (
+            estadisticas["metadata"]
+        )
+    except Exception:
+        pass
+
+    return resultado# Generación de respuestas a quejas de Discord
 from servicio_respuestas import generar_respuesta_queja
 
 
@@ -509,6 +832,7 @@ def consultar_mensajes_comunidad(limite: int = 100):
     """Consulta interacciones almacenadas para Ingesta Discord."""
     import json
     from base_datos import listar_interacciones
+    from discord_reacciones import obtener_reacciones
 
     limite = max(1, min(limite, 500))
     registros = listar_interacciones(limite=limite)
@@ -588,12 +912,17 @@ def consultar_mensajes_comunidad(limite: int = 100):
                 "content": str(r.get("texto") or ""),
                 "created_at": str(r.get("enviado_en") or r.get("creado_en") or ""),
                 "attachments": obtener_adjuntos(r.get("attachments")),
+                "reactions": obtener_reacciones(
+                    r.get("channel_id"),
+                    r.get("message_id"),
+                ) if r.get("channel_id") and r.get("message_id") else [],
             },
             "analysis": {
                 "sentiment": normalizar_sentimiento(r.get("sentimiento")),
                 "sentiment_score": float(score) if score is not None else 0.0,
                 "relevance": int(relevancia) if relevancia is not None else 0,
                 "curation_status": str(r.get("estado_curaduria") or "pending"),
+                "discarded_at": r.get("descartado_en"),
                 "workflow_stage": str(r.get("etapa_flujo") or "ingesta"),
                 "topic": str(r.get("tema") or "SIN_CLASIFICAR"),
                 "keywords": palabras_clave(r.get("temas_clave")),
@@ -628,7 +957,10 @@ def cambiar_curaduria_comunidad(
             detail="Estado de curaduria no valido",
         )
 
-    actualizado = actualizar_curaduria(interaccion_id, estado)
+    try:
+        actualizado = actualizar_curaduria(interaccion_id, estado)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
     if not actualizado:
         raise HTTPException(
@@ -703,3 +1035,12 @@ def consultar_interaccion_individual(interaccion_id: int):
         "autor": interaccion.get("autor"),
         "texto": interaccion.get("texto"),
     }
+
+
+# Register OCI report routes after all application endpoints.
+from oci_report_routes import router as oci_report_router
+
+app.include_router(
+    oci_report_router,
+    dependencies=[Depends(validar_token_interno)],
+)

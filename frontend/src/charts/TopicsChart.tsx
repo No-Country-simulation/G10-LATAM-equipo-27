@@ -1,3 +1,4 @@
+﻿import { apiRequest } from '../api/client'
 import { useEffect, useState } from 'react'
 
 import {
@@ -31,17 +32,12 @@ function TopicsChart() {
 
             try {
 
-                const response = await fetch(
-                    (import.meta.env.VITE_MOTOR_API_URL || "http://127.0.0.1:8002").replace(/\/$/, "") + "/api/community/analytics"
-                )
+                const result = (await apiRequest(
+                    '/api/v1/content-workflow/analytics',
+                    { cache: 'no-store' }
+                )) as AnalyticsResponse
 
-                if (!response.ok) {
-                    throw new Error('No fue posible cargar los temas')
-                }
-
-                const result: AnalyticsResponse = await response.json()
-
-                setData(result.topics)
+                setData((result.topics ?? []).slice(0, 8))
 
             } catch (err) {
 
@@ -88,7 +84,7 @@ function TopicsChart() {
             )}
 
             {!loading && !error && (
-                <div className="mt-6 h-64">
+                <div className="mt-6 h-80">
 
                     <ResponsiveContainer width="100%" height="100%">
 
@@ -109,16 +105,16 @@ function TopicsChart() {
                                 tickFormatter={(value) => `${value}%`}
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fontSize: 12 }}
+                                tick={{ fontSize: 11 }}
                             />
 
                             <YAxis
                                 type="category"
                                 dataKey="topic"
-                                width={100}
+                                width={145}
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fontSize: 12 }}
+                                tick={{ fontSize: 11 }}
                             />
 
                             <Tooltip

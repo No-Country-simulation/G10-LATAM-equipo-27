@@ -3,26 +3,45 @@ from cerebro_ia import cadena
 
 
 def analizar_pendientes(limite: int = 20) -> dict:
-    """
-    Analiza mensajes pendientes con el motor de IA y guarda
-    los KPIs directamente en SQLite.
-    """
-    mensajes = listar_interacciones(
-        estado="pendiente",
-        limite=limite,
-    )
+    """Analiza mensajes pendientes sin bloquear la cola ante errores."""
+    import logging
+    import sqlite3
+    from base_datos import RUTA_BD
+
+    logger = logging.getLogger(__name__)
+
+    if not isinstance(limite, int) or not 1 <= limite <= 100:
+        raise ValueError("El limite debe estar entre 1 y 100.")
+
+    if not hasattr(analizar_pendientes, "_fallidos"):
+        analizar_pendientes._fallidos = set()
+
+    fallidos = analizar_pendientes._fallidos
+
+    with sqlite3.connect(RUTA_BD, timeout=30) as conexion:
+        conexion.row_factory = sqlite3.Row
+        mensajes = [
+            dict(fila)
+            for fila in conexion.execute(
+                """
+                SELECT id, texto, canal
+                FROM interacciones
+                WHERE estado = 'pendiente'
+                ORDER BY id ASC
+                """
+            ).fetchall()
+            if fila["id"] not in fallidos
+        ][:limite]
 
     analizados = 0
     errores = 0
 
     for mensaje in mensajes:
         try:
-            respuesta = cadena.invoke(
-                {
-                    "texto": mensaje["texto"],
-                    "canal": mensaje["canal"],
-                }
-            )
+            respuesta = cadena.invoke({
+                "texto": mensaje["texto"],
+                "canal": mensaje["canal"],
+            })
 
             kpis = respuesta.model_dump()
 
@@ -41,9 +60,15 @@ def analizar_pendientes(limite: int = 20) -> dict:
                 analizados += 1
             else:
                 errores += 1
+                fallidos.add(mensaje["id"])
 
         except Exception:
             errores += 1
+            fallidos.add(mensaje["id"])
+            logger.exception(
+                "Error analizando mensaje ID=%s",
+                mensaje["id"],
+            )
 
     return {
         "status": "exito",
@@ -51,6 +76,7 @@ def analizar_pendientes(limite: int = 20) -> dict:
         "analizados": analizados,
         "errores": errores,
     }
+
 
 def reanalizar_interacciones(ids: list[int]) -> dict:
     mensajes = listar_interacciones(limite=1000)

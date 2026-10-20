@@ -41,3 +41,33 @@ export async function getDiscordRecoveryPreview(
     `/api/v1/content-workflow/discord/recovery-preview?${params.toString()}`,
   ) as DiscordRecoveryResponse
 }
+
+export type DiscordRecoverySelection = {
+  channel_id: string
+  message_id: string
+}
+
+export type DiscordRecoveryResult = {
+  status: string
+  total_solicitados: number
+  encontrados: number
+  no_encontrados: string[]
+  guardadas_nuevas: number
+  repetidas_omitidas: number
+}
+
+export async function recoverSelectedDiscordMessages(
+  mensajes: DiscordRecoverySelection[],
+): Promise<DiscordRecoveryResult> {
+  if (mensajes.length < 1 || mensajes.length > 20) {
+    throw new Error('Selecciona entre 1 y 20 mensajes para recuperar.')
+  }
+
+  return await apiRequest(
+    '/api/v1/content-workflow/discord/recover-selected',
+    {
+      method: 'POST',
+      body: JSON.stringify({ mensajes }),
+    },
+  ) as DiscordRecoveryResult
+}

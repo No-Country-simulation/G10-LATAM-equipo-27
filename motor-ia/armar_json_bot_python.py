@@ -7,8 +7,10 @@ trabajo de procesamiento.py y base_datos.py; el bot solo arma el paquete.
 from periodos import a_utc_iso, semana_de
 
 CANALES = {
+    "1559244522842488942": "#notificaciones",
+    "1559244209884504245": "#pqrs",
     "1550016804418621452": "#general",
-    "1551309664397033513": "#preguntas",
+    "1551309664397033513": "#faq",
     "1551309281041715230": "#chat-egresados",
     "1551309330198953994": "#oportunidades-laborales",
 }

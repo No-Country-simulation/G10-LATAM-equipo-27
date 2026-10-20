@@ -19,6 +19,8 @@ class CrearContenidoRequest(BaseModel):
     hashtags: list[str] = Field(default_factory=list)
     tono: str = "profesional"
     tipo_contenido: str = "publicacion"
+    imagen_generada_url: str | None = Field(default=None, max_length=2048)
+    imagen_generada_prompt: str | None = Field(default=None, max_length=4000)
 
 
 class ActualizarContenidoRequest(BaseModel):
@@ -39,6 +41,7 @@ class RevisarContenidoRequest(BaseModel):
         "aprobado",
         "rechazado",
         "ajustes_solicitados",
+        "pendiente_revision",
     ]
     observaciones_revision: str | None = Field(
         default=None,

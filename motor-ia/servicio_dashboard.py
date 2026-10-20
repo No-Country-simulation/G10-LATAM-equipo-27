@@ -28,6 +28,9 @@ def obtener_interacciones_reales(
         item
         for item in interacciones
         if item.get("origen_comunidad") != ORIGEN_PRUEBA
+        and not str(item.get("autor") or "").strip().lower().startswith(
+            ("cloudedtech community bot", "cloudedtech_oficial")
+        )
     ]
 
 def obtener_ventanas_comparables() -> dict:

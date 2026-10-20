@@ -33,7 +33,7 @@ router = APIRouter(
 @router.get("/complaints/{interaccion_id}/publish-preview")
 async def consultar_vista_previa_discord(
     interaccion_id: int,
-    usuario: User = Depends(require_role("community_manager")),
+    usuario: User = Depends(require_role("admin", "community_manager")),
 ):
     if interaccion_id <= 0:
         raise HTTPException(
@@ -91,7 +91,7 @@ async def consultar_vista_previa_discord(
 @router.get("/complaints/published-responses")
 def consultar_respuestas_publicadas(
     db: Session = Depends(get_db),
-    usuario: User = Depends(require_role("community_manager")),
+    usuario: User = Depends(require_role("admin", "community_manager")),
 ):
     from app.content_workflow.discord_response_model import DiscordResponse
 
@@ -111,7 +111,7 @@ def consultar_respuestas_publicadas(
 async def publicar_respuesta_queja(
     solicitud: PublicarRespuestaDiscordRequest,
     db: Session = Depends(get_db),
-    usuario: User = Depends(require_role("community_manager")),
+    usuario: User = Depends(require_role("admin", "community_manager")),
 ):
     interaccion = await run_in_threadpool(
         solicitar_motor,
