@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CommunityLab Design System</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <style>
+    /* ---- Estilos de la documentación (no forman parte del sistema) ---- */
+    body { background: var(--surface-app); }
+    .ds-hero { background: radial-gradient(ellipse 60% 80% at 80% 0%, rgb(255 116 0 / .16), transparent 70%), var(--slate-950); color: #fff; padding: var(--space-12) var(--space-4) var(--space-10); }
+    .ds-hero__inner, .ds-wrap { max-width: 1200px; margin: 0 auto; }
+    .ds-hero h1 { margin-top: var(--space-8); font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+    .ds-hero h1 span { color: var(--color-brand); }
+    .ds-hero p { margin-top: var(--space-4); max-width: 40rem; color: var(--slate-400); }
+    .ds-hero__links { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+    .ds-hero .c-btn--secondary { background: transparent; color: #fff; border-color: var(--slate-700); box-shadow: none; }
+    .ds-hero .c-btn--secondary:hover { background: var(--slate-800); }
+    .ds-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); padding: var(--space-8) var(--space-4) var(--space-16); }
+    @media (min-width: 1024px) { .ds-wrap { grid-template-columns: 13rem minmax(0, 1fr); } }
+    .ds-toc { display: none; }
+    @media (min-width: 1024px) { .ds-toc { display: block; position: sticky; top: var(--space-6); align-self: start; } }
+    .ds-toc a { display: block; padding: 0.35rem 0.75rem; border-left: 2px solid var(--border-default); font-size: var(--text-sm); color: var(--text-muted); }
+    .ds-toc a:hover { color: var(--text-strong); text-decoration: none; border-color: var(--slate-400); }
+    .ds-toc a.is-active { color: var(--orange-600); border-color: var(--color-brand); font-weight: 600; }
+    .ds-toc p { margin: var(--space-4) 0 var(--space-2); }
+    .ds-section { scroll-margin-top: var(--space-6); }
+    .ds-section + .ds-section { margin-top: var(--space-16); }
+    .ds-section > h2 { font-size: var(--text-2xl); font-weight: 700; color: var(--text-strong); letter-spacing: -0.01em; }
+    .ds-section > p.lead { margin-top: var(--space-2); color: var(--text-muted); max-width: 46rem; font-size: var(--text-sm); }
+    .ds-sub { margin-top: var(--space-8); margin-bottom: var(--space-3); font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-muted); }
+    .ds-demo { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; }
+    .ds-demo__stage { padding: var(--space-6); display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+    .ds-demo__stage--muted { background: var(--surface-app); }
+    .ds-demo__stage--dark { background: var(--slate-900); }
+    .ds-demo__stage--col { flex-direction: column; align-items: stretch; }
+    .ds-demo .c-code { border-radius: 0; font-size: 11.5px; }
+    .ds-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: var(--space-3); }
+    .ds-swatch { border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; background: #fff; }
+    .ds-swatch__chip { height: 4rem; }
+    .ds-swatch__meta { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
+    .ds-swatch__meta b { display: block; color: var(--text-strong); }
+    .ds-swatch__meta code { color: var(--text-muted); font-family: var(--font-mono); font-size: 10.5px; }
+    .ds-type-row { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: var(--space-4); align-items: baseline; padding: var(--space-4) 0; border-bottom: 1px solid var(--border-subtle); }
+    .ds-type-row:last-child { border-bottom: 0; }
+    .ds-type-row code { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted); }
+    .ds-scale { display: flex; flex-direction: column; gap: var(--space-2); }
+    .ds-scale__row { display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-xs); color: var(--text-muted); }
+    .ds-scale__row code { width: 6rem; font-family: var(--font-mono); }
+    .ds-scale__bar { height: 0.75rem; background: var(--orange-200); border-radius: 2px; }
+    .ds-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: var(--space-2); }
+    .ds-icon { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: #fff; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .ds-icon .icon { color: var(--text-strong); width: 1.375rem; height: 1.375rem; }
+    .ds-rule { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+    @media (min-width: 768px) { .ds-rule { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .ds-do, .ds-dont { padding: var(--space-4); border-radius: var(--radius-lg); font-size: var(--text-sm); }
+    .ds-do { background: var(--success-bg); border: 1px solid var(--success-border); }
+    .ds-dont { background: var(--danger-bg); border: 1px solid var(--danger-border); }
+    .ds-do b, .ds-dont b { display: block; margin-bottom: var(--space-1); }
+    .ds-do b { color: var(--success-fg); } .ds-dont b { color: var(--danger-fg); }
+    .ds-shell { display: grid; grid-template-columns: 4rem 1fr; height: 12rem; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-default); }
+    .ds-shell__side { background: var(--slate-950); padding: var(--space-3) var(--space-2); display: flex; flex-direction: column; gap: 6px; }
+    .ds-shell__side i { height: 8px; border-radius: 3px; background: var(--slate-800); }
+    .ds-shell__side i.on { background: var(--color-brand); }
+    .ds-shell__main { background: var(--slate-50); padding: var(--space-3); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1.25rem 3rem 1fr; gap: 6px; }
+    .ds-shell__main i { background: #fff; border: 1px solid var(--slate-200); border-radius: 4px; }
+    .ds-shell__main i:first-child { grid-column: 1 / -1; background: transparent; border: 0; border-bottom: 2px solid var(--slate-300); border-radius: 0; width: 40%; }
+    .ds-shell__main i.wide { grid-column: span 2; }
+    table.ds-tokens td:first-child { font-family: var(--font-mono); font-size: var(--text-xs); white-space: nowrap; }
+    .ds-dot { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: middle; margin-right: var(--space-2); border: 1px solid rgb(0 0 0 / .06); }
+  </style>
+</head>
+<body>
+  <header class="ds-hero">
+    <div class="ds-hero__inner">
+      <div class="c-brand">
+        <img class="c-brand__logo" src="assets/logo.svg" alt="CloudEdTech">
+        <div><p class="c-brand__name">Cloud<span>Ed</span>Tech</p><p class="c-brand__tag">Education &amp; Technology</p></div>
+      </div>
+      <h1>CommunityLab<br><span>Design System</span></h1>
+      <p>Tokens, componentes y patrones de la plataforma de inteligencia para comunidades digitales. Derivado del frontend actual (Tailwind slate + naranjo #FF7400) y documentado en CSS puro.</p>
+      <div class="ds-hero__links">
+        <a class="c-btn c-btn--primary" href="app.html#dashboard"><svg class="icon icon--sm"><use href="#i-dashboard"/></svg>Ver prototipo</a>
+        <a class="c-btn c-btn--secondary" href="login.html"><svg class="icon icon--sm"><use href="#i-lock"/></svg>Pantalla de login</a>
+        <span class="c-pill c-pill--brand" style="align-self:center">v1.0 · octubre 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="ds-wrap">
+    <nav class="ds-toc" aria-label="Contenido">
+      <p class="t-overline">Fundamentos</p>
+      <a href="#principios">Principios</a>
+      <a href="#marca">Marca</a>
+      <a href="#color">Color</a>
+      <a href="#tipografia">Tipografía</a>
+      <a href="#espaciado">Espaciado, radios y sombras</a>
+      <a href="#iconos">Iconografía</a>
+      <p class="t-overline">Componentes</p>
+      <a href="#botones">Botones</a>
+      <a href="#formularios">Formularios</a>
+      <a href="#etiquetas">Pills y etiquetas</a>
+      <a href="#cards">Cards y KPIs</a>
+      <a href="#feedback">Alertas, toasts y modal</a>
+      <a href="#navegacion">Navegación y tabs</a>
+      <a href="#datos">Tablas y listas</a>
+      <a href="#graficos">Gráficos</a>
+      <p class="t-overline">Patrones</p>
+      <a href="#layout">Layout</a>
+      <a href="#contenido">Voz y contenido</a>
+    </nav>
+
+    <main>
+      <!-- ================= PRINCIPIOS ================= -->
+      <section class="ds-section" id="principios">
+        <h2>Principios</h2>
+        <p class="lead">CommunityLab ayuda a un equipo pequeño a entender cientos de conversaciones por día. La interfaz tiene que ser tranquila para leer datos y clara para actuar.</p>
+        <div class="l-grid l-grid--3" style="margin-top:var(--space-6)">
+          <div class="c-card"><span class="c-iconbox"><svg class="icon"><use href="#i-target"/></svg></span><h3 class="t-card" style="margin-top:var(--space-4)">El naranjo es acción</h3><p class="t-muted" style="margin-top:var(--space-1)">El color de marca marca lo activo y lo principal: el ítem de navegación, el botón primario y la serie más importante de un gráfico. Lo demás es slate.</p></div>
+          <div class="c-card"><span class="c-iconbox c-iconbox--info"><svg class="icon"><use href="#i-chart"/></svg></span><h3 class="t-card" style="margin-top:var(--space-4)">Datos primero</h3><p class="t-muted" style="margin-top:var(--space-1)">Cards blancas sobre slate-50, sin decoración extra. Las cifras usan números tabulares y el formato es-CL (2.481, 72%).</p></div>
+          <div class="c-card"><span class="c-iconbox c-iconbox--success"><svg class="icon"><use href="#i-sparkles"/></svg></span><h3 class="t-card" style="margin-top:var(--space-4)">La IA propone, la persona decide</h3><p class="t-muted" style="margin-top:var(--space-1)">Todo contenido generado se muestra editable y con estado (pendiente, aprobado, rechazado) antes de publicarse.</p></div>
+        </div>
+      </section>
+
+      <!-- ================= MARCA ================= -->
+      <section class="ds-section" id="marca">
+        <h2>Marca</h2>
+        <p class="lead">El isotipo combina nodos conectados y una flecha ascendente. El wordmark resalta “Ed” en naranjo. Hay dos versiones del isotipo: <code>logo.svg</code> para fondos oscuros y <code>logo-dark.svg</code> para fondos claros.</p>
+        <div class="l-grid l-grid--2" style="margin-top:var(--space-6)">
+          <div class="ds-demo"><div class="ds-demo__stage ds-demo__stage--dark" style="justify-content:center;padding:var(--space-10)">
+            <div class="c-brand c-brand--stacked"><img class="c-brand__logo" src="assets/logo.svg" alt=""><div><p class="c-brand__name">Cloud<span>Ed</span>Tech</p><p class="c-brand__tag">Education &amp; Technology</p></div></div>
+          </div></div>
+          <div class="ds-demo"><div class="ds-demo__stage" style="justify-content:center;padding:var(--space-10)">
+            <div class="c-brand c-brand--stacked c-brand--light"><img class="c-brand__logo" src="assets/logo-dark.svg" alt=""><div><p class="c-brand__name">Cloud<span>Ed</span>Tech</p><p class="c-brand__tag">Education &amp; Technology</p></div></div>
+          </div></div>
+        </div>
+        <div class="ds-demo" style="margin-top:var(--space-4)"><pre class="c-code">&lt;div class="c-brand"&gt;            &lt;!-- + c-brand--light sobre blanco, c-brand--stacked en login --&gt;
+  &lt;img class="c-brand__logo" src="assets/logo.svg" alt="CloudEdTech"&gt;
+  &lt;div&gt;
+    &lt;p class="c-brand__name"&gt;Cloud&lt;span&gt;Ed&lt;/span&gt;Tech&lt;/p&gt;
+    &lt;p class="c-brand__tag"&gt;Education &amp;amp; Technology&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre></div>
+      </section>
+
+      <!-- ================= COLOR ================= -->
+      <section class="ds-section" id="color">
+        <h2>Color</h2>
+        <p class="lead">Dos capas: primitivos (escalas) y tokens semánticos por rol. Los componentes usan solo los semánticos, así un cambio de marca toca un único archivo.</p>
+        <p class="ds-sub">Marca · orange</p>
+        <div class="ds-swatches" id="sw-brand"></div>
+        <p class="ds-sub">Neutros · slate</p>
+        <div class="ds-swatches" id="sw-slate"></div>
+        <p class="ds-sub">Estados</p>
+        <div class="ds-swatches" id="sw-states"></div>
+        <p class="ds-sub">Tokens semánticos principales</p>
+        <div class="ds-demo"><div class="c-table-wrap"><table class="c-table c-table--compact ds-tokens" id="tk-table"></table></div></div>
+      </section>
+
+      <!-- ================= TIPOGRAFÍA ================= -->
+      <section class="ds-section" id="tipografia">
+        <h2>Tipografía</h2>
+        <p class="lead">Arial / Helvetica, igual que la plataforma: neutra, legible y disponible en todos los sistemas. La jerarquía se construye con tamaño y peso, nunca con color de marca.</p>
+        <div class="c-card" style="margin-top:var(--space-6)">
+          <div class="ds-type-row"><code>.t-page--xl · 30/700</code><span class="t-page t-page--xl">Análisis</span></div>
+          <div class="ds-type-row"><code>.t-page · 24/700</code><span class="t-page">Ingesta de mensajes</span></div>
+          <div class="ds-type-row"><code>.t-kpi · 30/700</code><span class="t-kpi">2.481</span></div>
+          <div class="ds-type-row"><code>.t-section · 18/700</code><span class="t-section">Sentimiento de la comunidad</span></div>
+          <div class="ds-type-row"><code>.t-card · 16/700</code><span class="t-card">Panel de filtrado de mensajes</span></div>
+          <div class="ds-type-row"><code>.t-body · 14/400</code><span class="t-body">Después de varias semanas estudiando agentes de IA, finalmente logré construir mi primer proyecto funcional.</span></div>
+          <div class="ds-type-row"><code>.t-muted · 14/400</code><span class="t-muted">Ingresa tus credenciales para acceder a la plataforma.</span></div>
+          <div class="ds-type-row"><code>.t-caption · 12/400</code><span class="t-caption">Hace 18 min · #ia</span></div>
+          <div class="ds-type-row"><code>.t-overline · 12/600</code><span class="t-overline">Principal</span></div>
+          <div class="ds-type-row"><code>.c-brand__tag · 9/600</code><span class="c-brand__tag" style="color:var(--slate-500)">Education &amp; Technology</span></div>
+          <div class="ds-type-row"><code>.t-mono · 12</code><span class="t-mono">2026-W42 · axk3lz9qpm2</span></div>
+        </div>
+      </section>
+
+      <!-- ================= ESPACIADO ================= -->
+      <section class="ds-section" id="espaciado">
+        <h2>Espaciado, radios y sombras</h2>
+        <p class="lead">Base de 4px. Las cards usan 20px de padding (24px en las grandes) y 16–24px de separación entre ellas.</p>
+        <div class="l-grid l-grid--halves" style="margin-top:var(--space-6)">
+          <div class="c-card"><h3 class="t-card" style="margin-bottom:var(--space-4)">Espaciado</h3><div class="ds-scale" id="sp-scale"></div></div>
+          <div class="c-card">
+            <h3 class="t-card" style="margin-bottom:var(--space-4)">Radios</h3>
+            <div class="l-cluster" style="gap:var(--space-4)">
+              <div style="text-align:center"><div style="width:4rem;height:4rem;background:var(--orange-100);border:1px solid var(--orange-300);border-radius:var(--radius-md)"></div><p class="t-caption" style="margin-top:6px">md · 8<br>nav, botón sm</p></div>
+              <div style="text-align:center"><div style="width:4rem;height:4rem;background:var(--orange-100);border:1px solid var(--orange-300);border-radius:var(--radius-lg)"></div><p class="t-caption" style="margin-top:6px">lg · 12<br>input, botón</p></div>
+              <div style="text-align:center"><div style="width:4rem;height:4rem;background:var(--orange-100);border:1px solid var(--orange-300);border-radius:var(--radius-xl)"></div><p class="t-caption" style="margin-top:6px">xl · 16<br>card, modal</p></div>
+              <div style="text-align:center"><div style="width:4rem;height:4rem;background:var(--orange-100);border:1px solid var(--orange-300);border-radius:var(--radius-full)"></div><p class="t-caption" style="margin-top:6px">full<br>pill, avatar</p></div>
+            </div>
+            <h3 class="t-card" style="margin:var(--space-6) 0 var(--space-4)">Sombras</h3>
+            <div class="l-cluster" style="gap:var(--space-4)">
+              <div style="width:5rem;height:3.5rem;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);display:grid;place-items:center" class="t-caption">sm</div>
+              <div style="width:5rem;height:3.5rem;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);display:grid;place-items:center" class="t-caption">md</div>
+              <div style="width:5rem;height:3.5rem;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);display:grid;place-items:center" class="t-caption">lg</div>
+              <div style="width:5rem;height:3.5rem;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-focus);display:grid;place-items:center" class="t-caption">focus</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ICONOS ================= -->
+      <section class="ds-section" id="iconos">
+        <h2>Iconografía</h2>
+        <p class="lead">Lucide, trazo de 2px, 18px en navegación y 14px dentro de botones pequeños. Siempre heredan <code>currentColor</code>.</p>
+        <div class="ds-icons" id="icon-grid" style="margin-top:var(--space-6)"></div>
+        <div class="ds-demo" style="margin-top:var(--space-4)"><pre class="c-code">&lt;svg class="icon"&gt;&lt;use href="#i-dashboard"/&gt;&lt;/svg&gt;        &lt;!-- 18px --&gt;
+&lt;svg class="icon icon--sm"&gt;&lt;use href="#i-refresh"/&gt;&lt;/svg&gt;  &lt;!-- 14px; requiere js/icons.js --&gt;</pre></div>
+      </section>
+
+      <!-- ================= BOTONES ================= -->
+      <section class="ds-section" id="botones">
+        <h2>Botones</h2>
+        <p class="lead">Un solo primario por zona. Las acciones de IA llevan el ícono <em>sparkles</em> y muestran un estado de carga con spinner.</p>
+        <div class="ds-demo" style="margin-top:var(--space-6)">
+          <div class="ds-demo__stage">
+            <button class="c-btn c-btn--primary"><svg class="icon icon--sm"><use href="#i-refresh"/></svg>Sincronizar Discord</button>
+            <button class="c-btn c-btn--secondary"><svg class="icon icon--sm"><use href="#i-download"/></svg>Exportar</button>
+            <button class="c-btn c-btn--soft"><svg class="icon icon--sm"><use href="#i-sparkles"/></svg>Generar con IA</button>
+            <button class="c-btn c-btn--ghost">Limpiar filtros</button>
+            <button class="c-btn c-btn--dark">Oscuro</button>
+            <button class="c-btn c-btn--success"><svg class="icon icon--sm"><use href="#i-check"/></svg>Aprobar</button>
+            <button class="c-btn c-btn--danger">Rechazar</button>
+          </div>
+          <div class="ds-demo__stage ds-demo__stage--muted">
+            <button class="c-btn c-btn--primary c-btn--lg">Grande</button>
+            <button class="c-btn c-btn--primary">Base</button>
+            <button class="c-btn c-btn--primary c-btn--sm">Pequeño</button>
+            <button class="c-btn c-btn--secondary c-btn--icon" aria-label="Menú"><svg class="icon"><use href="#i-menu"/></svg></button>
+            <button class="c-btn c-btn--primary" disabled>Deshabilitado</button>
+            <button class="c-btn c-btn--primary" id="demo-busy"><svg class="icon icon--sm"><use href="#i-zap"/></svg>Probar carga</button>
+          </div>
+          <pre class="c-code">&lt;button class="c-btn c-btn--primary"&gt;…&lt;/button&gt;   &lt;!-- --secondary --soft --ghost --dark --success --danger --&gt;
+&lt;button class="c-btn c-btn--secondary c-btn--sm"&gt;…&lt;/button&gt;   &lt;!-- --sm --lg --icon --block --&gt;</pre>
+        </div>
+      </section>
+
+      <!-- ================= FORMULARIOS ================= -->
+      <section class="ds-section" id="formularios">
+        <h2>Formularios</h2>
+        <p class="lead">Inputs de 12px de radio con anillo de foco naranjo. La variante oscura (<code>c-input--dark</code>) es exclusiva del login.</p>
+        <div class="ds-demo" style="margin-top:var(--space-6)">
+          <div class="ds-demo__stage ds-demo__stage--col">
+            <div class="l-grid l-grid--3">
+              <div class="c-field"><label class="c-label" for="f1">Título</label><input class="c-input" id="f1" value="Demo Day de proyectos"><span class="c-hint">Máximo 80 caracteres.</span></div>
+              <div class="c-field"><label class="c-label" for="f2">Canal</label><select class="c-select" id="f2"><option>#anuncios</option><option>#proyectos</option></select></div>
+              <div class="c-field"><label class="c-label" for="f3">Usuario</label><input class="c-input is-invalid" id="f3" value="admin"><span class="c-hint c-hint--error">Este usuario ya existe.</span></div>
+            </div>
+            <div class="l-grid l-grid--3">
+              <div class="c-field"><label class="c-label sr-only" for="f4">Buscar</label><div class="c-input-group"><svg class="icon icon--sm"><use href="#i-search"/></svg><input class="c-input" id="f4" placeholder="Buscar por autor o contenido…"></div></div>
+              <div class="c-field"><input class="c-input" disabled value="Deshabilitado" aria-label="Deshabilitado"></div>
+              <div class="l-cluster" style="gap:var(--space-5)">
+                <label class="c-check"><input type="checkbox" checked>Mensajes</label>
+                <label class="c-switch"><input type="checkbox" checked><span class="c-switch__track"></span>2FA</label>
+              </div>
+            </div>
+            <div class="c-field"><label class="c-label" for="f5">Indicaciones para la IA</label><textarea class="c-textarea" id="f5" rows="3">Invitar a la comunidad al Demo Day del 28 de octubre…</textarea></div>
+            <div class="l-cluster">
+              <div class="c-segmented"><button class="is-active">7d</button><button>30d</button><button>90d</button></div>
+              <button class="c-chip is-active">Todas <span class="c-chip__n">12</span></button>
+              <button class="c-chip">Historia de éxito <span class="c-chip__n">2</span></button>
+              <button class="c-chip">Queja <span class="c-chip__n">1</span></button>
+            </div>
+          </div>
+          <div class="ds-demo__stage ds-demo__stage--dark ds-demo__stage--col" style="max-width:none">
+            <div class="l-grid l-grid--2">
+              <div class="c-field"><label class="c-label c-label--dark" for="f6">Usuario</label><input class="c-input c-input--dark" id="f6" placeholder="Ingresa tu usuario"></div>
+              <div class="c-field" style="justify-content:flex-end"><button class="c-btn c-btn--primary c-btn--lg c-btn--block">Iniciar sesión</button></div>
+            </div>
+          </div>
+          <pre class="c-code">&lt;div class="c-field"&gt;
+  &lt;label class="c-label" for="x"&gt;Título&lt;/label&gt;
+  &lt;input class="c-input" id="x"&gt;            &lt;!-- .is-invalid · c-select · c-textarea · c-input--dark --&gt;
+  &lt;span class="c-hint"&gt;Ayuda&lt;/span&gt;
+&lt;/div&gt;
+&lt;div class="c-segmented"&gt;&lt;button class="is-active"&gt;7d&lt;/button&gt;…&lt;/div&gt;</pre>
+        </div>
+      </section>
+
+      <!-- ================= ETIQUETAS ================= -->
+      <section class="ds-section" id="etiquetas">
+        <h2>Pills, etiquetas y avatares</h2>
+        <p class="lead">Las pills comunican estado (con punto) o categoría (sin punto). El color sigue el significado, no la decoración.</p>
+        <div class="ds-demo" style="margin-top:var(--space-6)">
+          <div class="ds-demo__stage">
+            <span class="c-pill c-pill--success c-pill--dot">Positivo</span>
+            <span class="c-pill c-pill--info c-pill--dot">Pregunta</span>
+            <span class="c-pill c-pill--dot">Neutral</span>
+            <span class="c-pill c-pill--danger c-pill--dot">Negativo</span>
+            <span class="c-pill c-pill--warning">💾 Respaldo Local</span>
+            <span class="c-pill c-pill--success">✅ Subido a OCI</span>
+            <span class="c-pill c-pill--brand">Agentes IA</span>
+            <span class="c-pill c-pill--accent">Recurso compartido</span>
+            <span class="c-pill c-pill--outline">Historia de éxito</span>
+          </div>
+          <div class="ds-demo__stage ds-demo__stage--muted">
+            <span class="c-tag c-tag--channel">ia</span><span class="c-tag">CSV</span>
+            <span class="c-live"><span class="c-live__dot"></span>En vivo</span>
+            <span class="c-avatar">VR</span><span class="c-avatar c-avatar--indigo">MF</span><span class="c-avatar c-avatar--emerald">CH</span><span class="c-avatar c-avatar--purple">AR</span><span class="c-avatar c-avatar--slate">IP</span>
+            <div class="c-avatar-stack"><span class="c-avatar c-avatar--sm">VR</span><span class="c-avatar c-avatar--sm c-avatar--indigo">MF</span><span class="c-avatar c-avatar--sm c-avatar--slate">+2</span></div>
+          </div>
+          <pre class="c-code">&lt;span class="c-pill c-pill--success c-pill--dot"&gt;Positivo&lt;/span&gt;  &lt;!-- --brand --success --warning --danger --info --accent --outline --&gt;
+&lt;span class="c-tag c-tag--channel"&gt;ia&lt;/span&gt;
+&lt;span class="c-avatar c-avatar--sm"&gt;VR&lt;/span&gt;</pre>
+        </div>
+      </section>
+
+      <!-- ================= CARDS ================= -->
+      <section class="ds-section" id="cards">
+        <h2>Cards y KPIs</h2>
+        <p class="lead">La stat card es el componente más repetido: etiqueta, valor tabular, tendencia y un ícono en caja naranja suave. La versión del dashboard suma un sparkline.</p>
+        <div class="l-grid l-grid--3" style="margin-top:var(--space-6)">
+          <article class="c-card">
+            <div class="c-stat"><div><p class="c-stat__label">Mensajes procesados</p><p class="c-stat__value t-kpi" data-count="2481">0</p><p class="c-stat__meta"><span class="c-trend c-trend--up"><svg class="icon icon--sm"><use href="#i-up"/></svg>+12,4%</span> vs. período anterior</p></div><span class="c-iconbox"><svg class="icon"><use href="#i-message"/></svg></span></div>
+            <div class="c-stat__spark"><canvas id="ds-spark"></canvas></div>
+          </article>
+          <article class="c-card">
+            <div class="c-stat"><div><p class="c-stat__label">Sentimiento positivo</p><p class="c-stat__value t-kpi" data-count="72" data-suffix="%">0</p><p class="c-stat__meta"><span class="c-trend c-trend--up"><svg class="icon icon--sm"><use href="#i-up"/></svg>+4,2 pts</span> este mes</p></div><span class="c-iconbox c-iconbox--success"><svg class="icon"><use href="#i-smile"/></svg></span></div>
+            <div class="c-meter" style="margin-top:var(--space-4)"><div class="c-progress c-progress--sm c-progress--success"><div class="c-progress__bar" data-progress="72"></div></div></div>
+          </article>
+          <article class="c-card c-card--brand">
+            <div class="l-between"><span class="c-iconbox"><svg class="icon"><use href="#i-cloud"/></svg></span><span class="c-pill c-pill--success c-pill--dot">Conectado</span></div>
+            <p class="t-card" style="color:#fff;margin-top:var(--space-4)">OCI Object Storage</p>
+            <p style="font-size:var(--text-sm);color:var(--slate-400)">communitylab-reports · sa-santiago-1</p>
+            <div class="c-progress c-progress--sm" style="margin-top:var(--space-4);background:var(--slate-800)"><div class="c-progress__bar" data-progress="24"></div></div>
+          </article>
+        </div>
+        <div class="ds-demo" style="margin-top:var(--space-4)"><pre class="c-code">&lt;article class="c-card"&gt;                      &lt;!-- --lg --flush --muted --brand --interactive --&gt;
+  &lt;div class="c-stat"&gt;
+    &lt;div&gt;
+      &lt;p class="c-stat__label"&gt;Mensajes procesados&lt;/p&gt;
+      &lt;p class="c-stat__value t-kpi"&gt;2.481&lt;/p&gt;
+      &lt;p class="c-stat__meta"&gt;&lt;span class="c-trend c-trend--up"&gt;+12,4%&lt;/span&gt; vs. período anterior&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;span class="c-iconbox"&gt;&lt;svg class="icon"&gt;…&lt;/svg&gt;&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/article&gt;</pre></div>
+      </section>
+
+      <!-- ================= FEEDBACK ================= -->
+      <section class="ds-section" id="feedback">
+        <h2>Alertas, toasts y modal</h2>
+        <p class="lead">Las alertas viven en la página; los toasts confirman acciones y desaparecen solos en 3 segundos; el modal se reserva para revisar detalles (JSON) o crear entidades.</p>
+        <div class="l-stack l-stack--sm" style="margin-top:var(--space-6)">
+          <div class="c-alert c-alert--brand"><svg class="icon"><use href="#i-bulb"/></svg><div><p class="c-alert__title">Insight destacado</p>Las conversaciones sobre agentes de IA tienen alto potencial educativo.</div></div>
+          <div class="c-alert c-alert--success"><svg class="icon"><use href="#i-check-circle"/></svg><div>Reporte 2026-W42 subido a OCI.</div></div>
+          <div class="c-alert c-alert--warning"><svg class="icon"><use href="#i-alert"/></svg><div>1 usuario no ha cambiado su contraseña en más de 90 días.</div></div>
+          <div class="c-alert c-alert--danger"><svg class="icon"><use href="#i-alert"/></svg><div><p class="c-alert__title">Soporte crítico</p>Error 403 en materiales del módulo 4.</div></div>
+          <div class="c-alert c-alert--info"><svg class="icon"><use href="#i-info"/></svg><div>La sincronización con Discord corre cada hora.</div></div>
+        </div>
+        <div class="ds-demo" style="margin-top:var(--space-4)">
+          <div class="ds-demo__stage">
+            <button class="c-btn c-btn--secondary" id="demo-toast"><svg class="icon icon--sm"><use href="#i-bell"/></svg>Mostrar toast</button>
+            <button class="c-btn c-btn--secondary" id="demo-modal"><svg class="icon icon--sm"><use href="#i-eye"/></svg>Abrir modal</button>
+          </div>
+          <div class="ds-demo__stage ds-demo__stage--muted" style="justify-content:center">
+            <div class="c-card" style="width:100%;max-width:26rem"><div class="c-empty" style="padding:var(--space-8) var(--space-4)"><div class="c-empty__icon"><svg class="icon icon--lg"><use href="#i-search"/></svg></div><p class="c-empty__title">No se encontraron mensajes</p><p class="c-empty__text">Prueba con otros filtros o limpia la búsqueda.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= NAVEGACIÓN ================= -->
+      <section class="ds-section" id="navegacion">
+        <h2>Navegación y tabs</h2>
+        <p class="lead">Sidebar oscuro de 256px agrupado por rol: Principal (todos), Insights (admin y revisor) y Administración (solo admin). El ítem activo es un bloque naranjo sólido.</p>
+        <div class="l-grid l-grid--side-main" style="margin-top:var(--space-6)">
+          <div style="background:var(--slate-950);border-radius:var(--radius-xl);padding:var(--space-4)">
+            <p class="l-sidebar__label">Principal</p>
+            <div class="l-sidebar__items">
+              <a class="c-navlink is-active" href="#navegacion"><svg class="icon"><use href="#i-dashboard"/></svg>Dashboard</a>
+              <a class="c-navlink" href="#navegacion"><svg class="icon"><use href="#i-message"/></svg>Ingesta de mensajes<span class="c-navlink__badge">312</span></a>
+              <a class="c-navlink" href="#navegacion"><svg class="icon"><use href="#i-chart"/></svg>Análisis</a>
+            </div>
+          </div>
+          <div class="c-card">
+            <div class="c-tabs" id="demo-tabs">
+              <button class="c-tab is-active">Bandeja<span class="c-tab__count">4</span></button>
+              <button class="c-tab">Anuncios oficiales<span class="c-tab__count">3</span></button>
+              <button class="c-tab">Quejas y soporte<span class="c-tab__count">2</span></button>
+            </div>
+            <p class="t-muted" style="margin-top:var(--space-4)">Tabs para dividir una página en flujos relacionados (Redacción de contenidos). Usa <code>c-segmented</code> para filtros de un mismo dato, como el período.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DATOS ================= -->
+      <section class="ds-section" id="datos">
+        <h2>Tablas y listas</h2>
+        <p class="lead">Tablas con encabezado en mayúsculas sobre slate-50 y acciones alineadas a la derecha. Los mensajes de Discord usan la lista <code>c-msg</code>.</p>
+        <div class="ds-demo" style="margin-top:var(--space-6)">
+          <div class="c-table-wrap"><table class="c-table">
+            <thead><tr><th>Semana</th><th class="is-right">Mensajes</th><th>Estado</th><th class="is-right">Acciones</th></tr></thead>
+            <tbody>
+              <tr><td><span class="is-strong t-mono">2026-W42</span><br><span class="t-caption">12 – 18 oct</span></td><td class="is-right">612</td><td><span class="c-pill c-pill--warning">💾 Respaldo Local</span></td><td class="is-right"><button class="c-btn c-btn--primary c-btn--sm"><svg class="icon icon--sm"><use href="#i-upload"/></svg>Subir a OCI</button></td></tr>
+              <tr><td><span class="is-strong t-mono">2026-W41</span><br><span class="t-caption">5 – 11 oct</span></td><td class="is-right">587</td><td><span class="c-pill c-pill--success">✅ Subido a OCI</span></td><td class="is-right"><button class="c-btn c-btn--secondary c-btn--sm"><svg class="icon icon--sm"><use href="#i-eye"/></svg>Ver JSON</button></td></tr>
+            </tbody>
+          </table></div>
+          <div class="c-msg" style="border-top:1px solid var(--border-default)">
+            <span class="c-avatar">CG</span>
+            <div class="c-msg__body">
+              <div class="c-msg__head"><span class="c-msg__author">Carlos Gómez</span><span class="c-tag c-tag--channel">ia</span><span class="c-msg__time">Hace 18 min</span></div>
+              <p class="c-msg__text">Después de varias semanas estudiando agentes de IA, finalmente logré construir mi primer proyecto funcional.</p>
+              <div class="c-msg__meta"><span class="c-pill c-pill--success c-pill--dot">Positivo</span><span class="c-pill c-pill--brand">Agentes IA</span><span class="c-pill c-pill--outline">Historia de éxito</span></div>
+            </div>
+            <div class="c-msg__score"><b>92</b><span class="t-caption">relevancia</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= GRÁFICOS ================= -->
+      <section class="ds-section" id="graficos">
+        <h2>Gráficos</h2>
+        <p class="lead">Chart.js 4.4.1 con una fábrica propia (<code>js/charts.js</code>) que lee los colores desde los tokens. Todos los gráficos animan al entrar, muestran tooltip, tienen leyenda clicable y responden al selector de período.</p>
+        <div class="l-grid l-grid--main-side" style="margin-top:var(--space-6)">
+          <article class="c-card">
+            <div class="c-card__header">
+              <div><h3 class="t-section">Chart card</h3><p class="c-card__desc">Cambia el período o haz clic en la leyenda.</p></div>
+              <div class="c-segmented" id="ds-period"><button data-days="7">7d</button><button data-days="30" class="is-active">30d</button><button data-days="90">90d</button></div>
+            </div>
+            <div class="c-chart"><canvas id="ds-area"></canvas></div>
+            <div id="ds-area-lg"></div>
+          </article>
+          <article class="c-card">
+            <h3 class="t-section">Donut con centro</h3>
+            <p class="c-card__desc">El centro cambia al pasar el mouse.</p>
+            <div class="c-chart c-chart--donut" style="margin-top:var(--space-4)"><canvas id="ds-donut"></canvas><div class="c-chart__center" id="ds-donut-c" data-value="72%" data-label="Positivo"><b>72%</b><span>Positivo</span></div></div>
+            <div id="ds-donut-lg"></div>
+          </article>
+        </div>
+        <p class="ds-sub">Paleta de series (orden fijo)</p>
+        <div class="l-cluster" id="chart-palette"></div>
+        <div class="ds-rule" style="margin-top:var(--space-5)">
+          <div class="ds-do"><b>Sí</b>La serie principal va en naranjo y las demás en slate, indigo o emerald. En barras, resalta solo el máximo (los demás al 35%).</div>
+          <div class="ds-dont"><b>No</b>No uses rojo ni verde para series que no sean sentimiento. Evita más de 4 series por gráfico; usa leyenda clicable para filtrar.</div>
+        </div>
+        <div class="ds-demo" style="margin-top:var(--space-4)"><pre class="c-code">const ch = CECharts.area(canvas, { labels, unit: '%', datasets: [{ label: 'Positivo', data, color: '--sentiment-positive' }] });
+CECharts.legend(legendEl, ch);                 // leyenda HTML clicable
+CECharts.update(ch, newLabels, [newData]);     // transición animada al cambiar período
+CECharts.donut(canvas, { labels, values, colors, center: centerEl });
+CECharts.bar(canvas, { labels, datasets, horizontal: true, highlightMax: true });</pre></div>
+      </section>
+
+      <!-- ================= LAYOUT ================= -->
+      <section class="ds-section" id="layout">
+        <h2>Layout</h2>
+        <p class="lead">App shell con sidebar fijo y contenido sobre slate-50. Por debajo de 1024px el sidebar se convierte en drawer y aparece un header blanco con menú.</p>
+        <div class="l-grid l-grid--halves" style="margin-top:var(--space-6)">
+          <div class="c-card">
+            <div class="ds-shell"><div class="ds-shell__side"><i class="on"></i><i></i><i></i><i></i><i></i></div><div class="ds-shell__main"><i></i><i></i><i></i><i></i><i class="wide"></i><i></i></div></div>
+            <p class="t-caption" style="margin-top:var(--space-3)">Sidebar 256px · main padding 16 / 24 / 32px · ancho máximo 1440px</p>
+          </div>
+          <div class="c-card">
+            <div class="c-row"><span class="c-row__label"><code>.l-grid--4</code></span><span class="c-row__value">KPIs · 1 → 2 → 4 columnas</span></div>
+            <div class="c-row"><span class="c-row__label"><code>.l-grid--6</code></span><span class="c-row__value">KPIs dashboard · 2 → 3 → 6</span></div>
+            <div class="c-row"><span class="c-row__label"><code>.l-grid--main-side</code></span><span class="c-row__value">Gráfico + resumen · 2fr / 1fr</span></div>
+            <div class="c-row"><span class="c-row__label"><code>.l-grid--halves</code></span><span class="c-row__value">Dos cards iguales</span></div>
+            <div class="c-row"><span class="c-row__label">Breakpoints</span><span class="c-row__value">640 · 1024 · 1536</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CONTENIDO ================= -->
+      <section class="ds-section" id="contenido">
+        <h2>Voz y contenido</h2>
+        <p class="lead">Español neutro con tuteo, verbos en infinitivo para acciones y frases cortas. Los números usan el formato es-CL.</p>
+        <div class="ds-rule" style="margin-top:var(--space-6)">
+          <div class="ds-do"><b>Sí</b>“Sincronizar Discord”, “Evaluar lote”, “Publicar respuesta”. “2.481 mensajes”, “72%”, “Hace 18 min”.</div>
+          <div class="ds-dont"><b>No</b>“Click aquí para sincronizar”, “Submit”, “2,481 msgs”. Evita mayúsculas sostenidas salvo en overlines.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="c-modal" id="ds-modal" role="dialog" aria-modal="true" aria-labelledby="ds-modal-t">
+    <div class="c-modal__dialog">
+      <div class="c-modal__head"><h2 class="t-card" id="ds-modal-t">reporte_2026-W42.json</h2><button class="c-btn c-btn--ghost c-btn--icon c-btn--sm" data-close aria-label="Cerrar"><svg class="icon"><use href="#i-x"/></svg></button></div>
+      <div class="c-modal__body"><pre class="c-code">{
+  <span class="k">"semana"</span>: <span class="s">"2026-W42"</span>,
+  <span class="k">"mensajes"</span>: <span class="n">612</span>,
+  <span class="k">"sentimiento_positivo"</span>: <span class="n">0.72</span>,
+  <span class="k">"subido_oci"</span>: <span class="n">false</span>
+}</pre></div>
+      <div class="c-modal__foot"><button class="c-btn c-btn--secondary" data-close>Cerrar</button><button class="c-btn c-btn--primary" data-close>Copiar JSON</button></div>
+    </div>
+  </div>
+  <div class="c-toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script>
+  (function () {
+    const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+    const cs = getComputedStyle(document.documentElement);
+    const sw = (el, list) => { $(el).innerHTML = list.map(([v, n, extra]) => `<div class="ds-swatch"><div class="ds-swatch__chip" style="background:var(${v})"></div><div class="ds-swatch__meta"><b>${n}</b><code>${v}</code>${extra ? `<br><code>${extra}</code>` : ''}</div></div>`).join(''); };
+    sw('#sw-brand', [['--orange-50', '50'], ['--orange-100', '100'], ['--orange-200', '200'], ['--orange-300', '300'], ['--orange-400', '400'], ['--orange-500', '500 · marca', '#FF7400'], ['--orange-600', '600 · hover'], ['--orange-700', '700'], ['--navy-950', 'Navy logo', '#080A27']]);
+    sw('#sw-slate', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((n) => [`--slate-${n}`, String(n)]));
+    sw('#sw-states', [['--success-solid', 'Éxito'], ['--warning-solid', 'Advertencia'], ['--danger-solid', 'Error'], ['--info-solid', 'Info'], ['--accent-solid', 'Acento'], ['--sentiment-neutral', 'Neutral']]);
+    const tks = [['--color-brand', 'Botón primario, ítem activo, serie principal'], ['--color-brand-hover', 'Hover del primario'], ['--color-brand-soft', 'Fondo de icon box'], ['--surface-app', 'Fondo de la aplicación'], ['--surface-card', 'Cards, tablas, modales'], ['--surface-inverse', 'Sidebar'], ['--surface-auth-card', 'Card del login'], ['--text-strong', 'Títulos y valores'], ['--text-body', 'Texto corrido'], ['--text-muted', 'Descripciones, labels de KPI'], ['--text-subtle', 'Metadatos, placeholders'], ['--border-default', 'Bordes de cards e inputs']];
+    $('#tk-table').innerHTML = `<thead><tr><th>Token</th><th>Uso</th></tr></thead><tbody>${tks.map(([t, u]) => `<tr><td><span class="ds-dot" style="background:var(${t})"></span>${t}</td><td>${u}</td></tr>`).join('')}</tbody>`;
+    $('#sp-scale').innerHTML = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map((n) => `<div class="ds-scale__row"><code>--space-${n}</code><div class="ds-scale__bar" style="width:var(--space-${n})"></div>${n * 4}px</div>`).join('');
+    $('#icon-grid').innerHTML = (window.CE_ICONS || []).map((n) => `<div class="ds-icon">${icon(n)}${n}</div>`).join('');
+    $('#chart-palette').innerHTML = [1, 2, 3, 4, 5, 6].map((n) => `<span class="c-pill c-pill--outline"><span class="ds-dot" style="background:var(--chart-${n});margin-right:0"></span>--chart-${n}</span>`).join('');
+
+    // Toast / modal / tabs / segmentados
+    const toast = (m) => { const t = document.createElement('div'); t.className = 'c-toast c-toast--success'; t.innerHTML = `${icon('check-circle')}<span>${m}</span>`; $('#toasts').append(t); setTimeout(() => { t.classList.add('is-leaving'); t.addEventListener('animationend', () => t.remove()); }, 3000); };
+    $('#demo-toast').addEventListener('click', () => toast('Configuración guardada'));
+    $('#demo-modal').addEventListener('click', () => $('#ds-modal').classList.add('is-open'));
+    $$('[data-close]').forEach((b) => b.addEventListener('click', () => $('#ds-modal').classList.remove('is-open')));
+    $('#ds-modal').addEventListener('click', (e) => { if (e.target.id === 'ds-modal') e.target.classList.remove('is-open'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#ds-modal').classList.remove('is-open'); });
+    document.addEventListener('click', (e) => {
+      const s = e.target.closest('.c-segmented button'); if (s) $$('button', s.parentElement).forEach((x) => x.classList.toggle('is-active', x === s));
+      const t = e.target.closest('#demo-tabs .c-tab'); if (t) $$('#demo-tabs .c-tab').forEach((x) => x.classList.toggle('is-active', x === t));
+      const c = e.target.closest('.c-chip'); if (c) c.classList.toggle('is-active');
+    });
+    $('#demo-busy').addEventListener('click', (e) => { const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = `${icon('refresh', 'icon--sm spin')}Procesando…`; setTimeout(() => { b.disabled = false; b.innerHTML = h; toast('Listo'); }, 1500); });
+
+    // Contadores y barras al entrar en pantalla
+    const io = new IntersectionObserver((ents) => ents.forEach((en) => {
+      if (!en.isIntersecting) return; const el = en.target; io.unobserve(el);
+      if (el.dataset.progress) { el.style.width = el.dataset.progress + '%'; return; }
+      const to = +el.dataset.count, suf = el.dataset.suffix || '', t0 = performance.now(), nf = new Intl.NumberFormat('es-CL');
+      const step = (now) => { const p = Math.min(1, (now - t0) / 900); el.textContent = nf.format(Math.round(to * (1 - Math.pow(1 - p, 3)))) + suf; if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }));
+    $$('[data-count], [data-progress]').forEach((el) => io.observe(el));
+
+    // Gráficos de ejemplo
+    if (window.CECharts) {
+      const D = window.CE_DATA, C = window.CECharts;
+      C.sparkline($('#ds-spark'), D.series(30, { base: 80, seed: 1 }));
+      const mk = (d) => [D.series(d, { base: 80, seed: 1 }), D.series(d, { base: 15, amp: 9, trend: 0.08, seed: 2 })];
+      let s = mk(30);
+      const a = C.area($('#ds-area'), { labels: D.dayLabels(30), datasets: [{ label: 'Mensajes', data: s[0] }, { label: 'Preguntas', data: s[1], color: '--chart-4', fill: 'origin' }] });
+      C.legend($('#ds-area-lg'), a);
+      $('#ds-period').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; const d = +b.dataset.days; C.update(a, D.dayLabels(d), mk(d)); });
+      const sent = D.sentiment, tot = sent.reduce((x, y) => x + y.value, 0);
+      const dn = C.donut($('#ds-donut'), { labels: sent.map((x) => x.label), values: sent.map((x) => x.value), colors: sent.map((x) => x.color), center: $('#ds-donut-c') });
+      C.legend($('#ds-donut-lg'), dn, { stacked: true, values: sent.map((x) => Math.round((x.value / tot) * 100) + '%') });
+    }
+
+    // TOC activo
+    const links = $$('.ds-toc a');
+    const so = new IntersectionObserver((ents) => ents.forEach((en) => { if (en.isIntersecting) links.forEach((l) => l.classList.toggle('is-active', l.getAttribute('href') === '#' + en.target.id)); }), { rootMargin: '-20% 0px -70% 0px' });
+    $$('.ds-section').forEach((s) => so.observe(s));
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CommunityLab · CloudEdTech</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <style>
+    /* Ajustes específicos del prototipo (no forman parte del sistema) */
+    .role-switch { padding: 0 var(--space-4) var(--space-2); }
+    .role-switch select { width: 100%; padding: 0.45rem 2rem 0.45rem 0.65rem; border-radius: var(--radius-md); border: 1px solid var(--slate-800); background-color: var(--slate-900); color: var(--slate-300); font-size: var(--text-xs); background-position: right 0.5rem center; }
+    .discord-embed { border-left: 4px solid var(--color-brand); background: var(--slate-100); border-radius: var(--radius-md); padding: var(--space-4); font-size: var(--text-sm); }
+    .discord-embed__bot { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-semibold); color: var(--text-strong); margin-bottom: var(--space-2); }
+    .discord-embed__bot .c-pill { padding: 0 0.35rem; font-size: 10px; border-radius: 4px; background: var(--indigo-500); color: #fff; }
+    .emoji-card { text-align: center; }
+    .emoji-card__e { font-size: 2rem; line-height: 1; }
+    .tagcloud { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; }
+    .tagcloud a { color: var(--text-body); font-weight: var(--weight-semibold); transition: color var(--duration-fast); }
+    .tagcloud a:hover { color: var(--color-brand); text-decoration: none; }
+    .draft-item { display: flex; gap: var(--space-3); align-items: flex-start; width: 100%; padding: var(--space-4) var(--space-5); border: 0; border-bottom: 1px solid var(--border-subtle); background: none; text-align: left; cursor: pointer; transition: background var(--duration-fast); }
+    .draft-item:hover { background: var(--surface-muted); }
+    .draft-item.is-active { background: var(--color-brand-subtle); box-shadow: inset 3px 0 0 var(--color-brand); }
+    .score-ring { --p: 80; width: 3rem; height: 3rem; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--color-brand) calc(var(--p) * 1%), var(--slate-100) 0); flex-shrink: 0; }
+    .score-ring span { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-strong); }
+    .perm { color: var(--success-solid); } .perm-no { color: var(--slate-300); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--success-solid); box-shadow: 0 0 0 3px var(--emerald-100); }
+    .status-dot--warn { background: var(--warning-solid); box-shadow: 0 0 0 3px var(--amber-50); }
+    .status-dot--off { background: var(--danger-solid); box-shadow: 0 0 0 3px var(--rose-50); }
+    .range { width: 100%; accent-color: var(--color-brand); }
+    .pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-muted); flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <!-- ============ Sidebar ============ -->
+  <div class="l-overlay" id="overlay" aria-hidden="true"></div>
+  <aside class="l-sidebar" id="sidebar" aria-label="Navegación principal">
+    <div class="l-sidebar__brand">
+      <div class="c-brand">
+        <img class="c-brand__logo" src="assets/logo.svg" alt="CloudEdTech">
+        <div>
+          <p class="c-brand__name">Cloud<span>Ed</span>Tech</p>
+          <p class="c-brand__tag">Education &amp; Technology</p>
+        </div>
+      </div>
+      <button class="l-sidebar__close" id="close-menu" type="button" aria-label="Cerrar menú"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+
+    <nav class="l-sidebar__nav" id="nav">
+      <div class="l-sidebar__group">
+        <p class="l-sidebar__label">Principal</p>
+        <div class="l-sidebar__items">
+          <a class="c-navlink" href="#dashboard" data-roles="admin reviewer community_manager"><svg class="icon"><use href="#i-dashboard"/></svg>Dashboard</a>
+          <a class="c-navlink" href="#messages" data-roles="admin reviewer community_manager"><svg class="icon"><use href="#i-message"/></svg>Ingesta de mensajes<span class="c-navlink__badge">312</span></a>
+          <a class="c-navlink" href="#analytics" data-roles="admin reviewer community_manager"><svg class="icon"><use href="#i-chart"/></svg>Análisis</a>
+          <a class="c-navlink" href="#content" data-roles="admin reviewer community_manager"><svg class="icon"><use href="#i-pen"/></svg>Redacción de contenidos<span class="c-navlink__badge">8</span></a>
+          <a class="c-navlink" href="#oci-storage" data-roles="admin reviewer community_manager"><svg class="icon"><use href="#i-database"/></svg>Informes y Almacenamiento</a>
+        </div>
+      </div>
+      <div class="l-sidebar__group" data-roles="admin reviewer">
+        <p class="l-sidebar__label">Insights</p>
+        <div class="l-sidebar__items">
+          <a class="c-navlink" href="#highlights" data-roles="admin reviewer"><svg class="icon"><use href="#i-star"/></svg>Historias destacadas</a>
+          <a class="c-navlink" href="#hashtags" data-roles="admin reviewer"><svg class="icon"><use href="#i-hash"/></svg>Hashtags</a>
+          <a class="c-navlink" href="#audience" data-roles="admin reviewer"><svg class="icon"><use href="#i-users"/></svg>Audiencia</a>
+          <a class="c-navlink" href="#calendar" data-roles="admin reviewer"><svg class="icon"><use href="#i-calendar"/></svg>Calendario</a>
+          <a class="c-navlink" href="#export" data-roles="admin reviewer"><svg class="icon"><use href="#i-download"/></svg>Export</a>
+          <a class="c-navlink" href="#my-reports" data-roles="admin reviewer"><svg class="icon"><use href="#i-file"/></svg>Mis reportes</a>
+        </div>
+      </div>
+      <div class="l-sidebar__group" data-roles="admin">
+        <p class="l-sidebar__label">Administración</p>
+        <div class="l-sidebar__items">
+          <a class="c-navlink" href="#audit" data-roles="admin"><svg class="icon"><use href="#i-audit"/></svg>Auditoría</a>
+          <a class="c-navlink" href="#security" data-roles="admin"><svg class="icon"><use href="#i-shield"/></svg>Seguridad</a>
+          <a class="c-navlink" href="#settings" data-roles="admin"><svg class="icon"><use href="#i-settings"/></svg>Configuración</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="l-sidebar__foot">
+      <div class="role-switch" style="padding-top:var(--space-3)">
+        <label class="sr-only" for="role-select">Ver como rol</label>
+        <select class="c-select" id="role-select" title="Prototipo: cambiar rol">
+          <option value="admin">Vista: Administrador</option>
+          <option value="reviewer">Vista: Revisor</option>
+          <option value="community_manager">Vista: Community Manager</option>
+        </select>
+      </div>
+      <div style="padding:0 var(--space-4)">
+        <a class="c-navlink c-navlink--quiet" href="login.html"><svg class="icon icon--sm"><use href="#i-logout"/></svg>Cerrar sesión</a>
+      </div>
+      <div style="padding:var(--space-2) var(--space-4) var(--space-4)">
+        <div class="c-usercard">
+          <span class="c-avatar" id="user-initials">VR</span>
+          <div style="min-width:0">
+            <p class="c-usercard__name" id="user-name">Valentina Rojas</p>
+            <p class="c-usercard__role" id="user-role">Administrador</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ Header mobile ============ -->
+  <header class="l-header">
+    <div class="c-brand c-brand--light">
+      <img class="c-brand__logo" src="assets/logo-dark.svg" alt="CloudEdTech">
+      <div>
+        <p class="c-brand__name">Cloud<span>Ed</span>Tech</p>
+        <p class="c-brand__tag">Education &amp; Technology</p>
+      </div>
+    </div>
+    <button class="c-btn c-btn--secondary c-btn--icon" id="open-menu" type="button" aria-label="Abrir menú"><svg class="icon"><use href="#i-menu"/></svg></button>
+  </header>
+
+  <!-- ============ Main ============ -->
+  <main class="l-main">
+    <div class="l-main__inner">
+
+      <!-- ========== DASHBOARD ========== -->
+      <section data-view="dashboard" aria-labelledby="t-dashboard">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-dashboard">Dashboard</h1>
+            <p>Resumen de la actividad de la comunidad CloudEdTech en Discord.</p>
+          </div>
+          <div class="l-page-head__actions">
+            <span class="c-live" title="Actualizando en tiempo real"><span class="c-live__dot"></span>En vivo</span>
+            <div class="c-segmented" data-period="dashboard" role="group" aria-label="Período">
+              <button type="button" data-days="7">7d</button>
+              <button type="button" data-days="30" class="is-active">30d</button>
+              <button type="button" data-days="90">90d</button>
+            </div>
+            <button class="c-btn c-btn--primary" type="button" data-action="sync"><svg class="icon icon--sm"><use href="#i-refresh"/></svg>Sincronizar Discord</button>
+          </div>
+        </div>
+
+        <div class="l-stack">
+          <div class="l-grid l-grid--6" id="dash-stats"></div>
+
+          <div class="l-grid l-grid--main-side">
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Actividad de mensajes</h2>
+                  <p class="c-card__desc">Mensajes ingeridos y preguntas detectadas por día.</p>
+                </div>
+                <span class="c-pill c-pill--success" id="dash-activity-delta">+12,4%</span>
+              </div>
+              <div class="c-chart"><canvas id="ch-dash-activity" aria-label="Gráfico de actividad de mensajes"></canvas></div>
+              <div id="lg-dash-activity"></div>
+            </article>
+
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Sentimiento de la comunidad</h2>
+                  <p class="c-card__desc">Pasa el mouse por cada segmento.</p>
+                </div>
+              </div>
+              <div class="c-chart c-chart--donut">
+                <canvas id="ch-dash-sentiment" aria-label="Distribución de sentimiento"></canvas>
+                <div class="c-chart__center" id="ct-dash-sentiment" data-value="72%" data-label="Positivo"><b>72%</b><span>Positivo</span></div>
+              </div>
+              <div id="lg-dash-sentiment"></div>
+            </article>
+          </div>
+
+          <div class="l-grid l-grid--halves">
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Evolución del sentimiento</h2>
+                  <p class="c-card__desc">% de mensajes por sentimiento.</p>
+                </div>
+              </div>
+              <div class="c-chart c-chart--sm"><canvas id="ch-dash-evolution"></canvas></div>
+              <div id="lg-dash-evolution"></div>
+            </article>
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Actividad de audiencia</h2>
+                  <p class="c-card__desc">Mensajes promedio por hora del día.</p>
+                </div>
+                <span class="c-pill c-pill--brand">Peak 20:00</span>
+              </div>
+              <div class="c-chart c-chart--sm"><canvas id="ch-dash-hours"></canvas></div>
+            </article>
+          </div>
+
+          <div class="l-grid l-grid--halves">
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Temas principales</h2>
+                  <p class="c-card__desc">Menciones en el período.</p>
+                </div>
+                <button class="c-btn c-btn--ghost c-btn--sm" type="button" data-action="sort-topics"><svg class="icon icon--sm"><use href="#i-sort"/></svg>Ordenar por crecimiento</button>
+              </div>
+              <div class="c-chart"><canvas id="ch-dash-topics"></canvas></div>
+            </article>
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Historias destacadas</h2>
+                  <p class="c-card__desc">Mayor puntaje de relevancia.</p>
+                </div>
+                <a class="c-btn c-btn--ghost c-btn--sm" href="#highlights">Ver todas<svg class="icon icon--sm"><use href="#i-chev-right"/></svg></a>
+              </div>
+              <div class="l-stack l-stack--sm" id="dash-highlights"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== INGESTA DE MENSAJES ========== -->
+      <section data-view="messages" aria-labelledby="t-messages">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-messages">Ingesta de mensajes</h1>
+            <p>Mensajes recolectados desde Discord, clasificados por sentimiento, tema y relevancia.</p>
+          </div>
+          <div class="l-page-head__actions">
+            <button class="c-btn c-btn--secondary" type="button" data-toast="Exportación CSV en cola"><svg class="icon icon--sm"><use href="#i-download"/></svg>Exportar</button>
+            <button class="c-btn c-btn--primary" type="button" data-action="sync"><svg class="icon icon--sm"><use href="#i-refresh"/></svg>Sincronizar Discord</button>
+          </div>
+        </div>
+
+        <div class="l-stack">
+          <div class="l-grid l-grid--4" id="msg-summary"></div>
+
+          <article class="c-card c-card--lg">
+            <div class="c-card__header">
+              <div style="display:flex;gap:var(--space-3)">
+                <span class="c-iconbox"><svg class="icon"><use href="#i-sparkles"/></svg></span>
+                <div>
+                  <h2 class="t-card">Evaluación por Lote con Inteligencia Artificial</h2>
+                  <p class="c-card__desc">Clasifica sentimiento, tema y relevancia de los mensajes pendientes en un solo paso.</p>
+                </div>
+              </div>
+              <span class="c-pill c-pill--warning c-pill--dot">312 pendientes</span>
+            </div>
+            <div class="c-toolbar">
+              <div class="c-field">
+                <label class="c-label" for="batch-size">Tamaño del lote</label>
+                <select class="c-select" id="batch-size"><option>50 mensajes</option><option selected>100 mensajes</option><option>250 mensajes</option></select>
+              </div>
+              <div class="c-field">
+                <label class="c-label" for="batch-channel">Canal</label>
+                <select class="c-select" id="batch-channel"><option>Todos los canales</option><option>#ia</option><option>#proyectos</option><option>#ayuda</option></select>
+              </div>
+              <button class="c-btn c-btn--primary" type="button" id="batch-run"><svg class="icon icon--sm"><use href="#i-zap"/></svg>Evaluar lote</button>
+            </div>
+            <div id="batch-progress" hidden style="margin-top:var(--space-5)">
+              <div class="c-meter">
+                <div class="c-meter__row"><span class="t-muted" id="batch-status">Procesando…</span><b id="batch-pct">0%</b></div>
+                <div class="c-progress"><div class="c-progress__bar" id="batch-bar"></div></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="c-card c-card--flush">
+            <div class="c-card__section">
+              <div class="c-card__header" style="margin-bottom:var(--space-4)">
+                <div>
+                  <h2 class="t-card">Panel de filtrado de mensajes</h2>
+                  <p class="c-card__desc"><span id="msg-count">12</span> mensajes coinciden con los filtros.</p>
+                </div>
+                <button class="c-btn c-btn--ghost c-btn--sm" type="button" id="msg-reset">Limpiar filtros</button>
+              </div>
+              <div class="c-toolbar">
+                <div class="c-field" style="flex-basis:16rem">
+                  <label class="c-label sr-only" for="msg-q">Buscar</label>
+                  <div class="c-input-group"><svg class="icon icon--sm"><use href="#i-search"/></svg><input class="c-input" id="msg-q" placeholder="Buscar por autor o contenido…"></div>
+                </div>
+                <div class="c-field"><label class="c-label sr-only" for="msg-channel">Canal</label><select class="c-select" id="msg-channel"><option value="">Todos los canales</option></select></div>
+                <div class="c-field"><label class="c-label sr-only" for="msg-sent">Sentimiento</label><select class="c-select" id="msg-sent"><option value="">Todo sentimiento</option><option value="positive">Positivo</option><option value="neutral">Neutral</option><option value="question">Pregunta</option><option value="negative">Negativo</option></select></div>
+                <div class="c-field"><label class="c-label sr-only" for="msg-topic">Tema</label><select class="c-select" id="msg-topic"><option value="">Todos los temas</option></select></div>
+              </div>
+              <div class="l-cluster" id="msg-chips" style="margin-top:var(--space-4)"></div>
+            </div>
+            <div id="msg-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== ANÁLISIS ========== -->
+      <section data-view="analytics" aria-labelledby="t-analytics">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page t-page--xl" id="t-analytics">Análisis</h1>
+            <p>Curaduría automática de conversaciones: sentimiento, temas, emojis y hashtags.</p>
+          </div>
+          <div class="l-page-head__actions">
+            <div class="c-segmented" data-period="analytics" role="group" aria-label="Período">
+              <button type="button" data-days="7">7d</button>
+              <button type="button" data-days="30" class="is-active">30d</button>
+              <button type="button" data-days="90">90d</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="l-stack">
+          <article class="c-card c-card--lg">
+            <h2 class="t-card">Métricas globales de curaduría</h2>
+            <p class="c-card__desc">Calculadas sobre todos los mensajes procesados del período.</p>
+            <div class="l-grid l-grid--4" id="an-metrics" style="margin-top:var(--space-5)"></div>
+          </article>
+
+          <div class="l-grid l-grid--main-side">
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-section">Evolución del sentimiento</h2>
+                  <p class="c-card__desc">Haz clic en la leyenda para aislar series.</p>
+                </div>
+              </div>
+              <div class="c-chart c-chart--lg"><canvas id="ch-an-sentiment"></canvas></div>
+              <div id="lg-an-sentiment"></div>
+            </article>
+            <article class="c-card c-card--brand">
+              <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-5)">
+                <span class="c-iconbox"><svg class="icon"><use href="#i-bulb"/></svg></span>
+                <h2 class="t-card" style="color:#fff">Insight destacado</h2>
+              </div>
+              <div class="l-stack l-stack--sm" id="an-insights"></div>
+            </article>
+          </div>
+
+          <article class="c-card c-card--lg">
+            <div class="c-card__header">
+              <div>
+                <h2 class="t-card">Scorecards de Emojis Destacados en la Comunidad</h2>
+                <p class="c-card__desc">Reacciones más usadas y su variación.</p>
+              </div>
+            </div>
+            <div class="l-grid l-grid--6" id="an-emojis"></div>
+          </article>
+
+          <div class="l-grid l-grid--halves">
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-card">Hashtags más populares</h2>
+                  <p class="c-card__desc">Volumen de uso en el período.</p>
+                </div>
+                <div class="c-segmented" id="an-hash-mode" role="group" aria-label="Métrica">
+                  <button type="button" data-mode="count" class="is-active">Volumen</button>
+                  <button type="button" data-mode="change">Crecimiento</button>
+                </div>
+              </div>
+              <div class="c-chart"><canvas id="ch-an-hashtags"></canvas></div>
+            </article>
+            <article class="c-card">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-card">Temas clave detectados en la comunidad</h2>
+                  <p class="c-card__desc">Relevancia vs. participación (normalizado 0–100).</p>
+                </div>
+              </div>
+              <div class="c-chart"><canvas id="ch-an-topics"></canvas></div>
+              <div id="lg-an-topics"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== REDACCIÓN DE CONTENIDOS ========== -->
+      <section data-view="content" aria-labelledby="t-content">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-content">Redacción de Contenidos</h1>
+            <p>Convierte conversaciones destacadas en contenido, anuncios y respuestas oficiales.</p>
+          </div>
+          <div class="l-page-head__actions">
+            <span class="c-pill c-pill--success c-pill--dot">Webhook Discord conectado</span>
+          </div>
+        </div>
+
+        <div class="c-tabs" role="tablist" data-tabs="content" style="margin-bottom:var(--space-6)">
+          <button class="c-tab is-active" role="tab" data-tab="inbox">Bandeja<span class="c-tab__count">4</span></button>
+          <button class="c-tab" role="tab" data-tab="announcements">Anuncios oficiales<span class="c-tab__count">3</span></button>
+          <button class="c-tab" role="tab" data-tab="complaints">Quejas y soporte<span class="c-tab__count">2</span></button>
+        </div>
+
+        <div data-panel="content:inbox">
+          <div class="l-grid l-grid--side-main">
+            <article class="c-card c-card--flush">
+              <div class="c-card__section"><h2 class="t-card">Bandeja de mensajes en Redacción</h2><p class="c-card__desc">Selecciona un borrador para revisarlo.</p></div>
+              <div id="draft-list"></div>
+            </article>
+            <div class="l-stack l-stack--sm">
+              <article class="c-card">
+                <div class="c-card__header" style="margin-bottom:var(--space-3)"><h3 class="t-card">Mensaje original de Discord</h3><span class="c-tag c-tag--channel" id="draft-channel">ia</span></div>
+                <div id="draft-original"></div>
+              </article>
+              <article class="c-card">
+                <div class="c-card__header" style="margin-bottom:var(--space-3)">
+                  <h3 class="t-card">Contenido generado</h3>
+                  <div class="l-cluster"><span class="c-pill" id="draft-type">Post LinkedIn</span><span class="c-pill" id="draft-status">Pendiente</span></div>
+                </div>
+                <textarea class="c-textarea" id="draft-text" rows="6" aria-label="Contenido generado"></textarea>
+                <div class="c-card__footer">
+                  <span class="t-caption" id="draft-chars">0 caracteres</span>
+                  <div class="l-cluster">
+                    <button class="c-btn c-btn--ghost c-btn--sm" type="button" id="draft-copy"><svg class="icon icon--sm"><use href="#i-copy"/></svg>Copiar</button>
+                    <button class="c-btn c-btn--secondary c-btn--sm" type="button" id="draft-regen"><svg class="icon icon--sm"><use href="#i-refresh"/></svg>Regenerar</button>
+                    <button class="c-btn c-btn--danger c-btn--sm" type="button" id="draft-reject">Rechazar</button>
+                    <button class="c-btn c-btn--success c-btn--sm" type="button" id="draft-approve"><svg class="icon icon--sm"><use href="#i-check"/></svg>Aprobar</button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="content:announcements" hidden>
+          <div class="l-grid l-grid--halves">
+            <article class="c-card c-card--lg">
+              <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-5)">
+                <span class="c-iconbox"><svg class="icon"><use href="#i-megaphone"/></svg></span>
+                <div>
+                  <h2 class="t-card">Panel de Anuncios Oficiales de la Comunidad (Discord Webhook)</h2>
+                  <p class="c-card__desc">Genera el anuncio con IA, revísalo y publícalo en el canal elegido.</p>
+                </div>
+              </div>
+              <div class="l-stack l-stack--sm">
+                <div class="c-field"><label class="c-label" for="ann-title">Título</label><input class="c-input" id="ann-title" value="Demo Day de proyectos de la comunidad"></div>
+                <div class="l-grid l-grid--2">
+                  <div class="c-field"><label class="c-label" for="ann-channel">Canal</label><select class="c-select" id="ann-channel"><option>#anuncios</option><option>#proyectos</option><option>#general</option></select></div>
+                  <div class="c-field"><label class="c-label" for="ann-tone">Tono</label><select class="c-select" id="ann-tone"><option>Cercano</option><option>Formal</option><option>Entusiasta</option></select></div>
+                </div>
+                <div class="c-field"><label class="c-label" for="ann-brief">Indicaciones para la IA</label><textarea class="c-textarea" id="ann-brief">Invitar a la comunidad al Demo Day del 28 de octubre a las 19:00. Cupos para 8 proyectos, inscripción en el canal #proyectos.</textarea></div>
+                <div class="l-cluster" style="justify-content:flex-end">
+                  <button class="c-btn c-btn--secondary" type="button" id="ann-generate"><svg class="icon icon--sm"><use href="#i-sparkles"/></svg>Generar con IA</button>
+                  <button class="c-btn c-btn--primary" type="button" id="ann-publish"><svg class="icon icon--sm"><use href="#i-send"/></svg>Publicar en Discord</button>
+                </div>
+              </div>
+            </article>
+            <div class="l-stack l-stack--sm">
+              <article class="c-card">
+                <h3 class="t-card" style="margin-bottom:var(--space-3)">Vista previa</h3>
+                <div class="discord-embed">
+                  <div class="discord-embed__bot"><span class="c-avatar c-avatar--sm">CE</span>CloudEdTech Bot <span class="c-pill">BOT</span><span class="t-caption">Hoy</span></div>
+                  <p class="t-card" id="ann-preview-title">📣 Demo Day de proyectos de la comunidad</p>
+                  <p class="t-body" id="ann-preview-body" style="margin-top:var(--space-2)">Genera el texto con IA para ver la vista previa.</p>
+                </div>
+              </article>
+              <article class="c-card c-card--flush">
+                <div class="c-card__section"><h3 class="t-card">Anuncios recientes</h3></div>
+                <div class="c-table-wrap"><table class="c-table c-table--compact" id="ann-table"></table></div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="content:complaints" hidden>
+          <article class="c-card c-card--flush">
+            <div class="c-card__section">
+              <div style="display:flex;gap:var(--space-3)">
+                <span class="c-iconbox c-iconbox--danger"><svg class="icon"><use href="#i-alert"/></svg></span>
+                <div>
+                  <h2 class="t-card">Panel de Quejas, Reclamos y Soporte Crítico</h2>
+                  <p class="c-card__desc">Mensajes con sentimiento negativo o problemas de plataforma que requieren respuesta oficial.</p>
+                </div>
+              </div>
+            </div>
+            <div id="complaint-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== OCI ========== -->
+      <section data-view="oci-storage" aria-labelledby="t-oci">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-oci">Informes y Almacenamiento (OCI)</h1>
+            <p>Reportes semanales generados automáticamente y respaldados en Oracle Cloud Infrastructure.</p>
+          </div>
+        </div>
+        <div class="l-stack">
+          <div class="l-grid l-grid--side-main">
+            <article class="c-card c-card--brand">
+              <div class="l-between" style="margin-bottom:var(--space-5)">
+                <div style="display:flex;align-items:center;gap:var(--space-3)">
+                  <span class="c-iconbox"><svg class="icon"><use href="#i-cloud"/></svg></span>
+                  <h2 class="t-section" style="color:#fff">OCI Object Storage</h2>
+                </div>
+                <span class="c-pill c-pill--success c-pill--dot">Conectado</span>
+              </div>
+              <dl class="c-dl" style="color:var(--slate-300)">
+                <dt style="color:var(--slate-400)">Bucket</dt><dd style="color:#fff">communitylab-reports</dd>
+                <dt style="color:var(--slate-400)">Región</dt><dd style="color:#fff">sa-santiago-1</dd>
+                <dt style="color:var(--slate-400)">Namespace</dt><dd style="color:#fff" class="t-mono">axk3lz9qpm2</dd>
+                <dt style="color:var(--slate-400)">Último sync</dt><dd style="color:#fff">Hoy, 08:00</dd>
+              </dl>
+              <div class="c-meter" style="margin-top:var(--space-5)">
+                <div class="c-meter__row"><span style="color:var(--slate-400)">Uso del bucket</span><b style="color:#fff">2,4 GB / 10 GB</b></div>
+                <div class="c-progress"><div class="c-progress__bar" data-progress="24"></div></div>
+              </div>
+            </article>
+            <article class="c-card c-card--lg">
+              <div class="c-card__header">
+                <div>
+                  <h2 class="t-card">📦 Reporte Semanal y Distribución (OCI)</h2>
+                  <p class="c-card__desc">Período actual: <b>2026-W43 · 19 – 25 oct</b></p>
+                </div>
+                <div class="l-cluster">
+                  <button class="c-btn c-btn--secondary" type="button" id="oci-generate"><svg class="icon icon--sm"><use href="#i-file"/></svg>Generar reporte</button>
+                  <button class="c-btn c-btn--primary" type="button" id="oci-sync"><svg class="icon icon--sm"><use href="#i-upload"/></svg>Sincronizar con OCI</button>
+                </div>
+              </div>
+              <div class="c-chart c-chart--sm"><canvas id="ch-oci-weeks"></canvas></div>
+            </article>
+          </div>
+
+          <article class="c-card c-card--flush">
+            <div class="c-card__section l-between">
+              <div><h2 class="t-card">Historial de Informes Semanales</h2><p class="c-card__desc">JSON generado cada lunes a las 08:00.</p></div>
+            </div>
+            <div class="c-table-wrap"><table class="c-table" id="oci-table"></table></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== HISTORIAS DESTACADAS ========== -->
+      <section data-view="highlights" aria-labelledby="t-highlights">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-highlights">Historias destacadas</h1>
+            <p>Logros, recursos y aportes de la comunidad con mayor potencial de contenido.</p>
+          </div>
+          <div class="l-page-head__actions l-cluster" id="hl-chips"></div>
+        </div>
+        <div class="l-stack">
+          <div class="c-alert c-alert--brand">
+            <svg class="icon"><use href="#i-bulb"/></svg>
+            <div><p class="c-alert__title">Insight destacado</p>Las historias de empleabilidad generan 3,2× más reacciones que el promedio. Considera una serie semanal de “Primer empleo”.</div>
+          </div>
+          <div class="l-grid l-grid--2" id="hl-grid"></div>
+        </div>
+      </section>
+
+      <!-- ========== HASHTAGS ========== -->
+      <section data-view="hashtags" aria-labelledby="t-hashtags">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-hashtags">Hashtags</h1>
+            <p>Etiquetas más usadas por la comunidad y su tendencia.</p>
+          </div>
+          <div class="c-segmented" data-period="hashtags" role="group" aria-label="Período">
+            <button type="button" data-days="7">7d</button>
+            <button type="button" data-days="30" class="is-active">30d</button>
+            <button type="button" data-days="90">90d</button>
+          </div>
+        </div>
+        <div class="l-stack">
+          <article class="c-card c-card--lg">
+            <div class="c-card__header">
+              <div><h2 class="t-card">Hashtags de la comunidad</h2><p class="c-card__desc">Uso diario de los 3 hashtags principales.</p></div>
+            </div>
+            <div class="c-chart"><canvas id="ch-hash-trend"></canvas></div>
+            <div id="lg-hash-trend"></div>
+          </article>
+          <div class="l-grid l-grid--side-main">
+            <article class="c-card">
+              <h2 class="t-card" style="margin-bottom:var(--space-4)">Nube de hashtags</h2>
+              <div class="tagcloud" id="hash-cloud"></div>
+            </article>
+            <article class="c-card c-card--flush">
+              <div class="c-table-wrap"><table class="c-table c-table--compact" id="hash-table"></table></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== AUDIENCIA ========== -->
+      <section data-view="audience" aria-labelledby="t-audience">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-audience">Audiencia</h1>
+            <p>Quiénes componen la comunidad y cuándo participan.</p>
+          </div>
+        </div>
+        <div class="l-stack">
+          <div class="l-grid l-grid--4" id="aud-segments"></div>
+          <article class="c-card c-card--lg">
+            <div class="c-card__header">
+              <div><h2 class="t-card">Análisis de audiencia</h2><p class="c-card__desc">Miembros por país.</p></div>
+              <div class="c-segmented" id="aud-sort" role="group" aria-label="Orden">
+                <button type="button" data-sort="desc" class="is-active">Mayor a menor</button>
+                <button type="button" data-sort="alpha">A–Z</button>
+              </div>
+            </div>
+            <div class="c-chart"><canvas id="ch-aud-country"></canvas></div>
+          </article>
+          <div class="l-grid l-grid--side-main">
+            <article class="c-card">
+              <h2 class="t-card">Nivel de experiencia</h2>
+              <div class="c-chart c-chart--donut" style="margin-top:var(--space-4)">
+                <canvas id="ch-aud-level"></canvas>
+                <div class="c-chart__center" id="ct-aud-level" data-value="1.842" data-label="Miembros"><b>1.842</b><span>Miembros</span></div>
+              </div>
+              <div id="lg-aud-level"></div>
+            </article>
+            <article class="c-card">
+              <div class="c-card__header"><div><h2 class="t-card">Actividad por hora</h2><p class="c-card__desc">Promedio de mensajes, zona horaria Santiago.</p></div></div>
+              <div class="c-chart"><canvas id="ch-aud-hours"></canvas></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== CALENDARIO ========== -->
+      <section data-view="calendar" aria-labelledby="t-calendar">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-calendar">Calendario</h1>
+            <p>Intensidad de conversación por día y eventos programados.</p>
+          </div>
+        </div>
+        <div class="l-grid l-grid--main-side">
+          <article class="c-card c-card--lg">
+            <div class="c-card__header">
+              <div><h2 class="t-card">Actividad por fecha</h2><p class="c-card__desc" id="cal-month-label">Octubre 2026</p></div>
+              <div class="l-cluster">
+                <button class="c-btn c-btn--secondary c-btn--icon c-btn--sm" type="button" id="cal-prev" aria-label="Mes anterior"><svg class="icon icon--sm"><use href="#i-chev-left"/></svg></button>
+                <button class="c-btn c-btn--secondary c-btn--icon c-btn--sm" type="button" id="cal-next" aria-label="Mes siguiente"><svg class="icon icon--sm"><use href="#i-chev-right"/></svg></button>
+              </div>
+            </div>
+            <div class="c-heat" id="cal-grid"></div>
+            <div class="l-between" style="margin-top:var(--space-4)">
+              <span class="t-caption">Haz clic en un día para ver el detalle.</span>
+              <div class="c-heat__scale">Menos <i style="background:var(--slate-50);border:1px solid var(--slate-100)"></i><i style="background:var(--orange-50)"></i><i style="background:var(--orange-200)"></i><i style="background:var(--orange-400)"></i><i style="background:var(--orange-600)"></i> Más</div>
+            </div>
+          </article>
+          <div class="l-stack l-stack--sm">
+            <article class="c-card day-panel" id="cal-detail"></article>
+            <article class="c-card">
+              <h2 class="t-card" style="margin-bottom:var(--space-3)">Próximos eventos</h2>
+              <div id="cal-events"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== EXPORT ========== -->
+      <section data-view="export" aria-labelledby="t-export">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-export">Export</h1>
+            <p>Descarga los datos de la comunidad para análisis externo.</p>
+          </div>
+        </div>
+        <div class="l-grid l-grid--main-side">
+          <article class="c-card c-card--lg">
+            <h2 class="t-card">Exportar información</h2>
+            <p class="c-card__desc">Elige qué datos incluir, el rango y el formato.</p>
+            <form class="l-stack l-stack--sm" id="export-form" style="margin-top:var(--space-5)">
+              <fieldset style="border:0;padding:0;margin:0">
+                <legend class="c-label" style="margin-bottom:var(--space-3)">Datos</legend>
+                <div class="l-grid l-grid--2" id="export-sets"></div>
+              </fieldset>
+              <div class="l-grid l-grid--2">
+                <div class="c-field"><label class="c-label" for="ex-from">Desde</label><input class="c-input" type="date" id="ex-from" value="2026-09-19"></div>
+                <div class="c-field"><label class="c-label" for="ex-to">Hasta</label><input class="c-input" type="date" id="ex-to" value="2026-10-19"></div>
+              </div>
+              <div class="c-field">
+                <span class="c-label">Formato</span>
+                <div class="c-segmented" id="ex-format" role="group" aria-label="Formato">
+                  <button type="button" class="is-active">CSV</button><button type="button">XLSX</button><button type="button">JSON</button><button type="button">PDF</button>
+                </div>
+              </div>
+              <div id="export-progress" hidden class="c-meter">
+                <div class="c-meter__row"><span class="t-muted">Generando archivo…</span><b id="export-pct">0%</b></div>
+                <div class="c-progress"><div class="c-progress__bar" id="export-bar"></div></div>
+              </div>
+              <div class="c-card__footer" style="margin-top:var(--space-2)">
+                <span class="t-muted">Estimado: <b class="t-brand" id="ex-estimate">0</b> registros</span>
+                <button class="c-btn c-btn--primary" type="submit"><svg class="icon icon--sm"><use href="#i-download"/></svg>Exportar</button>
+              </div>
+            </form>
+          </article>
+          <article class="c-card">
+            <h2 class="t-card" style="margin-bottom:var(--space-3)">Últimas exportaciones</h2>
+            <div class="c-timeline" id="export-history"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== MIS REPORTES ========== -->
+      <section data-view="my-reports" aria-labelledby="t-myreports">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-myreports">Mis reportes</h1>
+            <p>Reportes que generaste o programaste.</p>
+          </div>
+          <a class="c-btn c-btn--primary" href="#export"><svg class="icon icon--sm"><use href="#i-plus"/></svg>Nuevo reporte</a>
+        </div>
+        <article class="c-card c-card--flush">
+          <div class="c-card__section l-between">
+            <h2 class="t-card">Mis reportes</h2>
+            <div class="l-cluster" id="rep-chips"></div>
+          </div>
+          <div class="c-table-wrap"><table class="c-table" id="rep-table"></table></div>
+        </article>
+      </section>
+
+      <!-- ========== AUDITORÍA ========== -->
+      <section data-view="audit" aria-labelledby="t-audit">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-audit">Auditoría</h1>
+            <p>Registro inmutable de acciones de usuarios y del sistema.</p>
+          </div>
+          <button class="c-btn c-btn--secondary" type="button" data-toast="Registros exportados a CSV"><svg class="icon icon--sm"><use href="#i-download"/></svg>Exportar registros</button>
+        </div>
+        <div class="l-stack">
+          <article class="c-card">
+            <div class="c-card__header"><div><h2 class="t-card">Eventos por día</h2><p class="c-card__desc">Últimos 14 días, por nivel.</p></div></div>
+            <div class="c-chart c-chart--sm"><canvas id="ch-audit"></canvas></div>
+            <div id="lg-audit"></div>
+          </article>
+          <article class="c-card c-card--flush">
+            <div class="c-card__section">
+              <h2 class="t-card" style="margin-bottom:var(--space-4)">Registros de auditoría</h2>
+              <div class="c-toolbar">
+                <div class="c-field" style="flex-basis:16rem"><div class="c-input-group"><svg class="icon icon--sm"><use href="#i-search"/></svg><input class="c-input" id="audit-q" placeholder="Buscar usuario, acción o IP…" aria-label="Buscar"></div></div>
+                <div class="c-field"><select class="c-select" id="audit-level" aria-label="Nivel"><option value="">Todos los niveles</option><option value="info">Info</option><option value="success">Éxito</option><option value="warning">Advertencia</option><option value="danger">Crítico</option></select></div>
+              </div>
+            </div>
+            <div class="c-table-wrap"><table class="c-table" id="audit-table"></table></div>
+            <div class="pager"><span id="audit-count">8 registros</span><div class="l-cluster"><button class="c-btn c-btn--secondary c-btn--sm" disabled>Anterior</button><button class="c-btn c-btn--secondary c-btn--sm">Siguiente</button></div></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== SEGURIDAD ========== -->
+      <section data-view="security" aria-labelledby="t-security">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page" id="t-security">Seguridad</h1>
+            <p>Autenticación, credenciales, roles y usuarios del sistema.</p>
+          </div>
+          <button class="c-btn c-btn--primary" type="button" data-modal="user-modal"><svg class="icon icon--sm"><use href="#i-user-plus"/></svg>Nuevo usuario</button>
+        </div>
+        <div class="l-stack">
+          <div class="l-grid l-grid--halves">
+            <article class="c-card c-card--lg">
+              <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox"><svg class="icon"><use href="#i-lock"/></svg></span><div><h2 class="t-card">Autenticación</h2><p class="c-card__desc">Sesiones con JWT firmado.</p></div></div>
+              <div class="c-row"><span class="c-row__label">Duración de sesión</span><select class="c-select" style="width:auto"><option>4 horas</option><option selected>8 horas</option><option>24 horas</option></select></div>
+              <div class="c-row"><span class="c-row__label">Bloqueo tras intentos fallidos</span><span class="c-row__value">5 intentos</span></div>
+              <div class="c-row"><span class="c-row__label">Autenticación en dos pasos (2FA)</span><label class="c-switch"><input type="checkbox" checked><span class="c-switch__track"></span></label></div>
+              <div class="c-row"><span class="c-row__label">Cerrar sesiones inactivas</span><label class="c-switch"><input type="checkbox" checked><span class="c-switch__track"></span></label></div>
+            </article>
+            <article class="c-card c-card--lg">
+              <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox c-iconbox--success"><svg class="icon"><use href="#i-key"/></svg></span><div><h2 class="t-card">Seguridad de credenciales</h2><p class="c-card__desc">Cumplimiento de la política de contraseñas.</p></div></div>
+              <div class="l-stack l-stack--sm" id="sec-policy"></div>
+            </article>
+          </div>
+          <article class="c-card c-card--flush">
+            <div class="c-card__section"><h2 class="t-card">Roles y permisos</h2><p class="c-card__desc">Acceso por módulo según rol.</p></div>
+            <div class="c-table-wrap"><table class="c-table c-table--compact" id="perm-table"></table></div>
+          </article>
+          <article class="c-card c-card--flush">
+            <div class="c-card__section"><h2 class="t-card">Usuarios del sistema</h2></div>
+            <div class="c-table-wrap"><table class="c-table" id="users-table"></table></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== CONFIGURACIÓN ========== -->
+      <section data-view="settings" aria-labelledby="t-settings">
+        <div class="l-page-head">
+          <div class="l-page-head__text">
+            <h1 class="t-page t-page--xl" id="t-settings">Configuración</h1>
+            <p>Integraciones, IA, almacenamiento y notificaciones de la plataforma.</p>
+          </div>
+          <button class="c-btn c-btn--primary" type="button" data-toast="Configuración guardada" data-toast-type="success"><svg class="icon icon--sm"><use href="#i-check"/></svg>Guardar cambios</button>
+        </div>
+        <div class="l-grid l-grid--halves l-grid--gap-lg">
+          <article class="c-card c-card--lg l-span-full">
+            <div class="l-between" style="margin-bottom:var(--space-4)"><h2 class="t-card" style="font-weight:600">Estado del sistema</h2><span class="c-pill c-pill--success c-pill--dot">Operativo</span></div>
+            <div class="l-grid l-grid--3" id="sys-status"></div>
+          </article>
+
+          <article class="c-card c-card--lg">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox c-iconbox--info"><svg class="icon"><use href="#i-message"/></svg></span><div><h2 class="t-card" style="font-weight:600">Discord</h2><p class="c-card__desc">Servidor CloudEdTech · 1.842 miembros</p></div></div>
+            <div class="l-stack l-stack--sm">
+              <div class="c-field"><label class="c-label" for="dc-guild">ID del servidor</label><input class="c-input t-mono" id="dc-guild" value="1187349920448712704" readonly></div>
+              <div class="c-field"><span class="c-label">Canales monitoreados</span><div class="l-cluster" id="dc-channels"></div></div>
+              <div class="c-field"><label class="c-label" for="dc-interval">Frecuencia de sincronización</label><select class="c-select" id="dc-interval"><option>Cada 15 minutos</option><option selected>Cada hora</option><option>Cada 6 horas</option></select></div>
+            </div>
+          </article>
+
+          <article class="c-card c-card--lg">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox"><svg class="icon"><use href="#i-bot"/></svg></span><div><h2 class="t-card" style="font-weight:600">Inteligencia artificial</h2><p class="c-card__desc">Modelo usado para clasificar y redactar.</p></div></div>
+            <div class="l-stack l-stack--sm">
+              <div class="c-field"><label class="c-label" for="ai-model">Modelo</label><select class="c-select" id="ai-model"><option>Claude Sonnet 5.5</option><option>Claude Haiku 5.5</option><option>Claude Opus 5.5</option></select></div>
+              <div class="c-field"><div class="l-between"><label class="c-label" for="ai-temp">Creatividad (temperatura)</label><b class="t-brand" id="ai-temp-val">0.4</b></div><input class="range" type="range" id="ai-temp" min="0" max="1" step="0.1" value="0.4"></div>
+              <div class="c-row"><span class="c-row__label">Revisión humana obligatoria</span><label class="c-switch"><input type="checkbox" checked><span class="c-switch__track"></span></label></div>
+            </div>
+          </article>
+
+          <article class="c-card c-card--lg">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox c-iconbox--accent"><svg class="icon"><use href="#i-book"/></svg></span><div><h2 class="t-card" style="font-weight:600">Base de conocimiento</h2><p class="c-card__desc">Documentos que la IA usa como contexto.</p></div></div>
+            <div class="c-row"><span class="c-row__label">Documentos indexados</span><span class="c-row__value">148</span></div>
+            <div class="c-row"><span class="c-row__label">Fragmentos (chunks)</span><span class="c-row__value">6.392</span></div>
+            <div class="c-row"><span class="c-row__label">Última indexación</span><span class="c-row__value">18 oct, 23:10</span></div>
+            <div class="c-card__footer"><span class="t-caption">Vector store: OCI OpenSearch</span><button class="c-btn c-btn--secondary c-btn--sm" type="button" id="kb-reindex"><svg class="icon icon--sm"><use href="#i-refresh"/></svg>Reindexar</button></div>
+          </article>
+
+          <article class="c-card c-card--lg">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox c-iconbox--neutral"><svg class="icon"><use href="#i-cloud"/></svg></span><div><h2 class="t-card" style="font-weight:600">Oracle Cloud Infrastructure</h2><p class="c-card__desc">Almacenamiento de reportes.</p></div></div>
+            <div class="l-grid l-grid--2">
+              <div class="c-field"><label class="c-label" for="oci-region">Región</label><select class="c-select" id="oci-region"><option>sa-santiago-1</option><option>sa-saopaulo-1</option><option>us-ashburn-1</option></select></div>
+              <div class="c-field"><label class="c-label" for="oci-bucket">Bucket</label><input class="c-input" id="oci-bucket" value="communitylab-reports"></div>
+            </div>
+            <div class="c-row" style="margin-top:var(--space-2)"><span class="c-row__label">Subida automática semanal</span><label class="c-switch"><input type="checkbox" checked><span class="c-switch__track"></span></label></div>
+          </article>
+
+          <article class="c-card c-card--lg">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox c-iconbox--info"><svg class="icon"><use href="#i-users"/></svg></span><div><h2 class="t-card" style="font-weight:600">Usuarios y roles</h2><p class="c-card__desc">5 usuarios · 3 roles</p></div></div>
+            <div class="l-between"><div class="c-avatar-stack"><span class="c-avatar c-avatar--sm">VR</span><span class="c-avatar c-avatar--sm c-avatar--indigo">MF</span><span class="c-avatar c-avatar--sm c-avatar--emerald">CH</span><span class="c-avatar c-avatar--sm c-avatar--slate">+2</span></div><a class="c-btn c-btn--secondary c-btn--sm" href="#security">Administrar<svg class="icon icon--sm"><use href="#i-chev-right"/></svg></a></div>
+          </article>
+
+          <article class="c-card c-card--lg">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox c-iconbox--danger"><svg class="icon"><use href="#i-shield"/></svg></span><div><h2 class="t-card" style="font-weight:600">Seguridad</h2><p class="c-card__desc">Políticas globales.</p></div></div>
+            <div class="c-row"><span class="c-row__label">Forzar 2FA para administradores</span><label class="c-switch"><input type="checkbox" checked><span class="c-switch__track"></span></label></div>
+            <div class="c-row"><span class="c-row__label">Restringir acceso por IP</span><label class="c-switch"><input type="checkbox"><span class="c-switch__track"></span></label></div>
+          </article>
+
+          <article class="c-card c-card--lg l-span-full">
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)"><span class="c-iconbox"><svg class="icon"><use href="#i-bell"/></svg></span><div><h2 class="t-card" style="font-weight:600">Notificaciones</h2><p class="c-card__desc">Qué eventos te avisamos y por dónde.</p></div></div>
+            <div class="l-grid l-grid--2" id="notif-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== SIN ACCESO ========== -->
+      <section data-view="forbidden">
+        <div class="c-card">
+          <div class="c-empty">
+            <div class="c-empty__icon"><svg class="icon icon--lg"><use href="#i-lock"/></svg></div>
+            <p class="c-empty__title">Acceso restringido</p>
+            <p class="c-empty__text">Tu rol actual no tiene permisos para ver esta sección. Cambia el rol en la parte inferior del menú para probar otras vistas.</p>
+            <a class="c-btn c-btn--primary" href="#dashboard" style="margin-top:var(--space-5)">Ir al Dashboard</a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============ Modales ============ -->
+  <div class="c-modal" id="json-modal" role="dialog" aria-modal="true" aria-labelledby="json-modal-title">
+    <div class="c-modal__dialog">
+      <div class="c-modal__head"><h2 class="t-card" id="json-modal-title">Reporte</h2><button class="c-btn c-btn--ghost c-btn--icon c-btn--sm" data-close aria-label="Cerrar"><svg class="icon"><use href="#i-x"/></svg></button></div>
+      <div class="c-modal__body"><pre class="c-code" id="json-modal-code"></pre></div>
+      <div class="c-modal__foot"><button class="c-btn c-btn--secondary" data-close>Cerrar</button><button class="c-btn c-btn--primary" data-toast="JSON copiado al portapapeles" data-close><svg class="icon icon--sm"><use href="#i-copy"/></svg>Copiar JSON</button></div>
+    </div>
+  </div>
+
+  <div class="c-modal" id="user-modal" role="dialog" aria-modal="true" aria-labelledby="user-modal-title">
+    <div class="c-modal__dialog" style="max-width:30rem">
+      <div class="c-modal__head"><h2 class="t-card" id="user-modal-title">Nuevo usuario</h2><button class="c-btn c-btn--ghost c-btn--icon c-btn--sm" data-close aria-label="Cerrar"><svg class="icon"><use href="#i-x"/></svg></button></div>
+      <div class="c-modal__body l-stack l-stack--sm">
+        <div class="l-grid l-grid--2">
+          <div class="c-field"><label class="c-label" for="nu-first">Nombre</label><input class="c-input" id="nu-first" placeholder="Ej. Ignacio"></div>
+          <div class="c-field"><label class="c-label" for="nu-last">Apellido</label><input class="c-input" id="nu-last" placeholder="Ej. Paredes"></div>
+        </div>
+        <div class="c-field"><label class="c-label" for="nu-user">Usuario</label><input class="c-input" id="nu-user" placeholder="nombre.apellido"><span class="c-hint">Se enviará una invitación para definir la contraseña.</span></div>
+        <div class="c-field"><label class="c-label" for="nu-role">Rol</label><select class="c-select" id="nu-role"><option value="community_manager">Community Manager</option><option value="reviewer">Revisor</option><option value="admin">Administrador</option></select></div>
+      </div>
+      <div class="c-modal__foot"><button class="c-btn c-btn--secondary" data-close>Cancelar</button><button class="c-btn c-btn--primary" id="nu-save">Crear usuario</button></div>
+    </div>
+  </div>
+
+  <div class="c-toasts" id="toasts" aria-live="polite"></div>
+  <div class="c-tooltip" id="tooltip" role="tooltip"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

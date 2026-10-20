@@ -35,6 +35,7 @@ Memoria del proyecto entre sesiones. Máximo ~50 líneas: resume o elimina lo qu
   - **Adaptadores Autónomos X y LinkedIn:** Captura de ID de tweet (`https://x.com/CloudEdTech_1/status/{id}`) y URN de LinkedIn (`https://www.linkedin.com/feed/update/{urn}`) en el puente sin tocar `src/publishers.py`.
   - **Mesa de Trabajo Multicanal (ContentStudio.tsx):** Insignias verdes y links directos solo ante éxito real; ante fallos, banners rojos con el motivo técnico exacto, preservación de borradores y botón 'Reintentar publicación en {Red}'. Soporte para HITL con despacho parcial.
 - **Entorno Local Blindado para Demo:** Árbol de trabajo en `beta-pruebas`, respaldo de BD SQLite (`communitylab_demo_backup.db`) y rama `demo-local-funcional` en `personal` preservando la demostración local intacta.
+- **Design System CloudEdTech (`cloudedtech-design-system/cloudedtech-ds/`, rama `feature/design-system-cloudedtech` desde main):** guía (`design-system.html`), login y prototipo de 14 pantallas en HTML/CSS/JS puro con datos de ejemplo; aislado del backend y del frontend React, sin dependencias de Python. Ver su `README.md`.
 
 ## Decisiones (y por qué)
 - **Eliminación de Tecnicismos y Redundancias:** 'Curaduría' confunde a usuarios no técnicos. La insignia ahora describe el estado real del trabajo pendiente (IA o redacción de copy de Enoc). Se removió 'Actualizar' ya que el streaming de 5s y las acciones en la UI autorefrescan los datos.
